@@ -83,13 +83,13 @@ async def on_message(message):
             est_value_eth = floor_price_eth * tokens_held
             est_value_usd = est_value_eth * eth
 
-            current_pl_eth = est_value_eth - buy_costs_eth
+            current_pl_eth = total_sold_amount_eth - buy_costs_eth - mint_costs_eth
             current_pl_usd = int(current_pl_eth * eth)
 
-            potential_pl_eth = total_sold_amount_eth + est_value_eth - buy_costs_eth
+            potential_pl_eth = total_sold_amount_eth + est_value_eth - buy_costs_eth - mint_costs_eth
             potential_pl_usd = int(potential_pl_eth * eth)
 
-            roi = round(potential_pl_eth / buy_costs_eth * 100, 1)
+            roi = round(potential_pl_eth / buy_costs_eth, 1)
 
             wallet_msg = "> 錢包:"
             for wallet in wallets:
