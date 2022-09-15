@@ -27,7 +27,9 @@ async def on_message(message):
         # chat logging
         print(f"[{message.channel.id}] {username}: {user_message}") 
         args = user_message.lower().split(" ")
-        if args[0][0] != "!" or len(args) < 3:
+        if args[0][0] != "!":
+            return
+        if len(args) < 3:
             await message.reply("⚠️ 指令錯誤！")
             return
         if args[0] == "!pl":
