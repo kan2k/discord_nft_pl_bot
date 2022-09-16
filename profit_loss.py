@@ -10,12 +10,15 @@ start_block = 3914495 # Defaults at CryptoPunks creation block
 block = w3.eth.get_block('latest')
 last_block = block['number']
 
+gem_contract = "0x83C8F28c26bF6aaca652Df1DbBE0e1b56F8baBa2".lower() # Gem: GemSwap 2
+
 class Fetch:
     def __init__(self, limit, rate):
         self.limit = limit
         self.rate = rate
 
     async def make_request(self, url):
+        print(f"Making request for {url}")
         async with self.limit:
             async with aiohttp.ClientSession() as session:
                 async with session.request(method = 'GET', url = url) as response:
@@ -77,6 +80,7 @@ async def get_pl_from_wallets(os_link: str, wallets: list) -> dict:
 
     # nft calculation
     trade_tx_hashes = []
+    gem_tx_hashes = []
     free_and_mint_tx_hashes = []
     free_and_mint_count = sell_count = buy_count = 0
 
@@ -94,6 +98,11 @@ async def get_pl_from_wallets(os_link: str, wallets: list) -> dict:
                 if record['hash'] not in free_and_mint_tx_hashes:
                     free_and_mint_tx_hashes.append(record['hash'])
                 continue
+            if record['from'] == gem_contract:
+                buy_count += 1
+                if record['hash'] not in gem_tx_hashes:
+                    gem_tx_hashes.append(record['hash'])
+                continue
             if record['from'] in wallets:
                 sell_count += 1
             if record['to'] in wallets:
@@ -103,27 +112,35 @@ async def get_pl_from_wallets(os_link: str, wallets: list) -> dict:
     total_nft_count = free_and_mint_count + buy_count - sell_count
 
     # eth calculation
-    print(f"Fetching {len(trade_tx_hashes)} internal txns from etherscan api...")
+    print(f"Fetching {len(trade_tx_hashes) + len(gem_tx_hashes)} internal txns from etherscan api...")
 
     # get internal txs for all txs
     # async request task
+    f = Fetch(limit=asyncio.Semaphore(4), rate=1)
     task_urls = []
+    tasks = []
     for hash in trade_tx_hashes:
         task_urls.append(f"https://api.etherscan.io/api?module=account&action=txlistinternal&txhash={hash}&apikey={etherscan_api_key}")
-    tasks = []
-    f = Fetch(limit=asyncio.Semaphore(4), rate=1)
     for url in task_urls:
         tasks.append(f.make_request(url=url))
-    all_internal_txs = await asyncio.gather(*tasks)
+    all_internal_txs_trades = await asyncio.gather(*tasks)
+
+    task_urls = []
+    tasks = []
+    for hash in gem_tx_hashes:
+        task_urls.append(f"https://api.etherscan.io/api?module=account&action=txlistinternal&txhash={hash}&apikey={etherscan_api_key}")
+    for url in task_urls:
+        tasks.append(f.make_request(url=url))
+    all_internal_txs_gems = await asyncio.gather(*tasks)
 
     print(f"Trading Details of {project_name}: ")
     cost_eth = sale_eth = 0
-    for internal_txs in all_internal_txs:
-        total_amount_in_tx = 0
+    for internal_txs in all_internal_txs_trades:
+        total_amount_eth_in_tx = 0
         type_of_tx = ''
         print(internal_txs)
         for tx in internal_txs:
-            total_amount_in_tx += to_ether(tx['value'])
+            total_amount_eth_in_tx += to_ether(tx['value'])
             if tx['to'] in wallets:
                 type_of_tx = 'sale'
                 amount = to_ether(tx['value'])
@@ -131,11 +148,28 @@ async def get_pl_from_wallets(os_link: str, wallets: list) -> dict:
                 # print(f"[{hash}] Sold for {amount} ETH (${float(amount) * eth_price_on_day_of_tx})")
                 sale_eth += amount
                 # sale_usd += float(amount) * eth_price_on_day_of_tx
+
         if type_of_tx != 'sale':
-                print(f"[{hash}] Bought 1x {project_name} for {total_amount_in_tx} ETH")
-                # print(f"[{hash}] Bought for {total_amount_in_tx} ETH (${float(total_amount_in_tx) * eth_price_on_day_of_tx})")
-                cost_eth += total_amount_in_tx
-                # cost_usd += float(total_amount_in_tx) * eth_price_on_day_of_tx
+                print(f"[{hash}] Bought 1x {project_name} for {total_amount_eth_in_tx} ETH")
+                # print(f"[{hash}] Bought for {total_amount_eth_in_tx} ETH (${float(total_amount_eth_in_tx) * eth_price_on_day_of_tx})")
+                cost_eth += total_amount_eth_in_tx
+                # cost_usd += float(total_amount_eth_in_tx) * eth_price_on_day_of_tx
+
+    for internal_txs in all_internal_txs_gems:
+        total_amount_eth_in_tx = 0
+        amount_of_nft_in_tx = 0
+        for tx in internal_txs:
+            print(tx)
+            if tx['from'] == gem_contract:
+                total_amount_eth_in_tx += to_ether(tx['value'])
+                amount_of_nft_in_tx += 1
+                cost_eth += to_ether(tx['value'])
+            if tx['to'] in wallets: # gem return eth when on failed buys
+                total_amount_eth_in_tx -= to_ether(tx['value'])
+                cost_eth -= to_ether(tx['value'])
+        
+        print(f"[{hash}] Gem Swept {amount_of_nft_in_tx}x {project_name} for {total_amount_eth_in_tx} ETH")
+
 
     mint_eth = 0
     for hash in free_and_mint_tx_hashes:
@@ -154,4 +188,4 @@ async def get_pl_from_wallets(os_link: str, wallets: list) -> dict:
     return {"eth_price_today": eth_price, "project_name": project_name, "project_floor": project_floor, "project_image_url": project_image_url,"total_nft_count": total_nft_count, "total_trade_count": total_trade_count, "free_and_mint_count": free_and_mint_count, "buy_count": buy_count, "sell_count": sell_count, "mint_eth": mint_eth, "cost_eth": cost_eth, "sale_eth": sale_eth}
 
 if __name__ == "__main__":
-    asyncio.run(get_pl_from_wallets("https://opensea.io/collection/gamaspacestation", ["0x4e435D2d6fCe29Ab31f9841b98D09872869C6bC0"]))
+    asyncio.run(get_pl_from_wallets("https://opensea.io/collection/thefirstborne", ["0x209af07A4B6b2D15923ffa8C3d41cDAC49BC6c4F"]))
