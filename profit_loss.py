@@ -1,18 +1,29 @@
 from dotenv import dotenv_values
-from datetime import datetime
+import requests, os, aiohttp, asyncio
 from web3 import Web3
-import requests
-import time
-import os
 
 here = os.path.dirname(os.path.abspath(__file__))
 config = dotenv_values(os.path.join(here, ".env"))
-
 w3 = Web3(Web3.HTTPProvider(config["http_rpc"]))
 etherscan_api_key = config["etherscan_api_key"]
-start_block = 3914495 # Defaults at CryptoPunk creation block
+start_block = 3914495 # Defaults at CryptoPunks creation block
 block = w3.eth.get_block('latest')
 last_block = block['number']
+
+class Fetch:
+    def __init__(self, limit, rate):
+        self.limit = limit
+        self.rate = rate
+
+    async def make_request(self, url):
+        async with self.limit:
+            async with aiohttp.ClientSession() as session:
+                async with session.request(method = 'GET', url = url) as response:
+                    json = await response.json()
+                    if response.status != 200:
+                        response.raise_for_status()
+                    await asyncio.sleep(self.rate)
+                    return json['result']
 
 def to_ether(wei):
     return w3.fromWei(int(wei), 'ether')
@@ -35,13 +46,11 @@ def os_link_to_api(url):
 #     data = response.json()
 #     return round(data['market_data']['current_price']['usd'], 2)
 
-
-
-
-async def get_pl_from_wallets(os_link, wallets):
+async def get_pl_from_wallets(os_link: str, wallets: list) -> dict:
     # Returns
     # None when project is not found
 
+    wallets = [s.lower() for s in wallets]
     # fetch and init data from os
     project_contract_address = ""
     project_name = ""
@@ -94,17 +103,25 @@ async def get_pl_from_wallets(os_link, wallets):
     total_nft_count = free_and_mint_count + buy_count - sell_count
 
     # eth calculation
+    print(f"Fetching {len(trade_tx_hashes)} internal txns from etherscan api...")
+
+    # get internal txs for all txs
+    # async request task
+    task_urls = []
+    for hash in trade_tx_hashes:
+        task_urls.append(f"https://api.etherscan.io/api?module=account&action=txlistinternal&txhash={hash}&apikey={etherscan_api_key}")
+    tasks = []
+    f = Fetch(limit=asyncio.Semaphore(4), rate=1)
+    for url in task_urls:
+        tasks.append(f.make_request(url=url))
+    all_internal_txs = await asyncio.gather(*tasks)
+
     print(f"Trading Details of {project_name}: ")
     cost_eth = sale_eth = 0
-    for hash in trade_tx_hashes:
-        url = f"https://api.etherscan.io/api?module=account&action=txlistinternal&txhash={hash}&apikey={etherscan_api_key}"
-        response = requests.get(url)
-        data = response.json()
-        internal_txs = data['result']
-        type_of_tx = ''
+    for internal_txs in all_internal_txs:
         total_amount_in_tx = 0
-        # depreciated because coingecko api rate limit of 50/min
-        # eth_price_on_day_of_tx = get_eth_price_with_timestamp(internal_txs[0]['timeStamp']) 
+        type_of_tx = ''
+        print(internal_txs)
         for tx in internal_txs:
             total_amount_in_tx += to_ether(tx['value'])
             if tx['to'] in wallets:
@@ -115,10 +132,10 @@ async def get_pl_from_wallets(os_link, wallets):
                 sale_eth += amount
                 # sale_usd += float(amount) * eth_price_on_day_of_tx
         if type_of_tx != 'sale':
-            print(f"[{hash}] Bought 1x {project_name} for {total_amount_in_tx} ETH")
-            # print(f"[{hash}] Bought for {total_amount_in_tx} ETH (${float(total_amount_in_tx) * eth_price_on_day_of_tx})")
-            cost_eth += total_amount_in_tx
-            # cost_usd += float(total_amount_in_tx) * eth_price_on_day_of_tx
+                print(f"[{hash}] Bought 1x {project_name} for {total_amount_in_tx} ETH")
+                # print(f"[{hash}] Bought for {total_amount_in_tx} ETH (${float(total_amount_in_tx) * eth_price_on_day_of_tx})")
+                cost_eth += total_amount_in_tx
+                # cost_usd += float(total_amount_in_tx) * eth_price_on_day_of_tx
 
     mint_eth = 0
     for hash in free_and_mint_tx_hashes:
@@ -135,3 +152,6 @@ async def get_pl_from_wallets(os_link, wallets):
     print(f"Sold {sell_count}x {project_name} for {sale_eth} ETH (~${float(sale_eth) * eth_price})")
 
     return {"eth_price_today": eth_price, "project_name": project_name, "project_floor": project_floor, "project_image_url": project_image_url,"total_nft_count": total_nft_count, "total_trade_count": total_trade_count, "free_and_mint_count": free_and_mint_count, "buy_count": buy_count, "sell_count": sell_count, "mint_eth": mint_eth, "cost_eth": cost_eth, "sale_eth": sale_eth}
+
+if __name__ == "__main__":
+    asyncio.run(get_pl_from_wallets("https://opensea.io/collection/gamaspacestation", ["0x4e435D2d6fCe29Ab31f9841b98D09872869C6bC0"]))

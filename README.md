@@ -1,23 +1,26 @@
-### command
-`!pl <opensea_link>`
+## what is this?
+etherscan transaction scraper with nft data, discord bot integration
 
-### is this bot accurate?
+## is this bot accurate?
 no, but its close, royalties are acccounted
-should use function for get requests, currently no exception catching
 
-### what i wouldve done better
+## what i wouldve done better
 bypass rate limit for coingecko
 account gas price for trades/mints
+should use function for get requests, currently no exception catching
 
-### why is the bot speaking in chinese
+## why is the bot speaking in chinese
 bot made in hong kong 🇭🇰
 
-### .env variables
+## .env variables
 `http_rpc`
 `etherscan_api_key`
 `discord_bot_token`
 `discord_target_channel`
 `discord_embed_image`
 
-### discord bot permission
+## discord command(s)
+`!pl <opensea_link>`
+
+## discord bot permission
 only send messages in text permission is required
