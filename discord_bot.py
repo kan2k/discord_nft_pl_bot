@@ -45,7 +45,7 @@ async def on_message(message):
             if len(clean_wallets) > 5:
                 await message.reply(f"⚠️ 太多錢包！ ({wallet})")
                 return
-            await message.reply(f"⏳ 正在從區塊鏈取得數據，請稍等...")
+            loading_msg = await message.reply(f"⏳ 正在從區塊鏈取得數據，請稍等...")
             data = {}
             try:
                 # eth_price_today, project_name, project_floor, project_image_url, total_nft_count, total_trade_count, free_and_mint_count, buy_count, sell_count, mint_eth, buy_eth, cost_eth, sale_eth
@@ -115,6 +115,7 @@ async def on_message(message):
             embed.set_image(url=data['project_image_url'])
             embed.set_thumbnail(url="https://i.imgur.com/FqJzlGW.png")
             await message.reply(embed=embed)
+            await loading_msg.delete()
 
 def start_bot():
     client.run(config["discord_bot_token"])
