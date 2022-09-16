@@ -86,10 +86,10 @@ async def on_message(message):
             current_pl_eth = total_sold_amount_eth - buy_costs_eth - mint_costs_eth
             current_pl_usd = int(current_pl_eth * eth)
 
-            potential_pl_eth = total_sold_amount_eth + est_value_eth - buy_costs_eth - mint_costs_eth
+            potential_pl_eth = est_value_eth + current_pl_eth
             potential_pl_usd = int(potential_pl_eth * eth)
 
-            roi = round(potential_pl_eth / buy_costs_eth, 1)
+            roi = round(((current_pl_eth) / (buy_costs_eth + mint_costs_eth) * 100), 1)
 
             wallet_msg = "> 錢包:"
             for wallet in wallets:
@@ -111,7 +111,7 @@ async def on_message(message):
             embed.add_field(name="地板價", value=f"`Ξ{round(floor_price_eth, eth_decimal)} (${floor_price_usd})`")
             embed.add_field(name="目前 P&L", value=f"`Ξ{round(current_pl_eth, eth_decimal)} (${current_pl_usd})`")
             embed.add_field(name="潛在 P&L", value=f"`Ξ{round(potential_pl_eth, eth_decimal)} (${potential_pl_usd})`")
-            embed.add_field(name="ROI", value=f"`{roi}%`")
+            embed.add_field(name="已實現 ROI", value=f"`{roi}%`")
             embed.set_image(url=data['project_image_url'])
             embed.set_thumbnail(url="https://i.imgur.com/FqJzlGW.png")
             await message.reply(embed=embed)
