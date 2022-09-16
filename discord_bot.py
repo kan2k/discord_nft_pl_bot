@@ -89,8 +89,11 @@ async def on_message(message):
             potential_pl_eth = est_value_eth + current_pl_eth
             potential_pl_usd = int(potential_pl_eth * eth)
 
-            roi = "GAS ONLY 🔥" and round(((current_pl_eth) / (buy_costs_eth + mint_costs_eth) * 100), 1)
+            roi = buy_costs_eth + mint_costs_eth and round(((current_pl_eth) / (buy_costs_eth + mint_costs_eth) * 100), 1)
 
+            if roi == 0:
+                roi = "GAS ONLY 🔥"
+                
             wallet_msg = "> 錢包:"
             for wallet in wallets:
                 wallet_msg += f"\n> {wallet[:10]}...{wallet[-10:]}"
