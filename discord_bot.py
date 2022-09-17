@@ -50,6 +50,7 @@ async def on_message(message):
             try:
                 # eth_price_today, project_name, project_floor, project_image_url, total_nft_count, total_trade_count, free_and_mint_count, buy_count, sell_count, mint_eth, buy_eth, cost_eth, sale_eth
                 data = await get_pl_from_wallets(os_link, clean_wallets)
+                print(data)
             except:
                 await message.reply("⚠️ 數據取得錯誤！")
                 return
@@ -89,7 +90,7 @@ async def on_message(message):
             potential_pl_eth = est_value_eth
             potential_pl_usd = int(potential_pl_eth * eth)
 
-            roi = current_pl_eth and round(((current_pl_eth) / (buy_costs_eth + mint_costs_eth) * 100), 1)
+            roi = buy_costs_eth + mint_costs_eth and round(((current_pl_eth) / (buy_costs_eth + mint_costs_eth) * 100), 1)
 
             wallet_msg = "> 錢包:"
             for wallet in wallets:
