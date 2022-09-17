@@ -86,7 +86,7 @@ async def on_message(message):
             current_pl_eth = total_sold_amount_eth - buy_costs_eth - mint_costs_eth
             current_pl_usd = int(current_pl_eth * eth)
 
-            potential_pl_eth = est_value_eth + current_pl_eth
+            potential_pl_eth = est_value_eth
             potential_pl_usd = int(potential_pl_eth * eth)
 
             roi = current_pl_eth and round(((current_pl_eth) / (buy_costs_eth + mint_costs_eth) * 100), 1)
@@ -95,7 +95,7 @@ async def on_message(message):
             for wallet in wallets:
                 wallet_msg += f"\n> {wallet[:10]}...{wallet[-10:]}"
 
-            embed = discord.Embed(title=f"P&L: {data['project_name']}", description=wallet_msg, color=discord.Colour.purple())
+            embed = discord.Embed(title=f"P&L 數據 - {data['project_name']}", description=wallet_msg, color=discord.Colour.purple())
             embed.set_footer(text="Powered by https://twitter.com/Jaasonft", icon_url="https://i.imgur.com/6ZaSEwK.png")
             embed.add_field(name="鑄造 \u200B \u200B \u200B \u200B", value=f"`{tokens_minted}`", inline=True)
             embed.add_field(name="鑄造價 \u200B \u200B \u200B \u200B", value=f"`Ξ{round(mint_costs_eth, eth_decimal)}  (${mint_costs_usd})`")

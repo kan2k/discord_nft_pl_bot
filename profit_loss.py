@@ -11,6 +11,7 @@ block = w3.eth.get_block('latest')
 last_block = block['number']
 
 gem_contract = "0x83C8F28c26bF6aaca652Df1DbBE0e1b56F8baBa2".lower() # Gem: GemSwap 2
+weth_contract = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2" # WETH Token Contract
 
 class Fetch:
     def __init__(self, limit, rate):
@@ -18,10 +19,10 @@ class Fetch:
         self.rate = rate
 
     async def make_request(self, url):
-        print(f"Making request for {url}")
         async with self.limit:
             async with aiohttp.ClientSession() as session:
                 async with session.request(method = 'GET', url = url) as response:
+                    print(f"Making request for {url}")
                     json = await response.json()
                     if response.status != 200:
                         response.raise_for_status()
@@ -38,7 +39,10 @@ def get_eth_price_now():
     return round(float(data["data"]['rates']['USDC']), 1)
 
 def os_link_to_api(url):
-    return url.lower().replace("www.", "").replace("zh-CN/", "").replace("zh-TW/", "").replace("https://opensea.io/collection/", "https://api.opensea.io/collection/")
+    return url.lower().replace("www.", "").replace("zh-cn/", "").replace("zh-tw/", "").replace("https://opensea.io/collection/", "https://api.opensea.io/collection/")
+
+def os_link_to_os_graph(url):
+    return url.lower().replace("www.", "").replace("zh-CN/", "").replace("zh-TW/", "").replace("https://opensea.io/collection/", "https://open-graph.opensea.io/v1/collections/")
 
 # def get_eth_price_with_timestamp(timestamp):
 #     # CoinGecko
@@ -57,15 +61,14 @@ async def get_pl_from_wallets(os_link: str, wallets: list) -> dict:
     # fetch and init data from os
     project_contract_address = ""
     project_name = ""
-    project_image_url = ""
+    project_image_url = os_link_to_os_graph(os_link)
     project_floor = 0
     if "opensea.io" in os_link:
         url = os_link_to_api(os_link)
         response = requests.get(url)
         data = response.json()
         project_contract_address = data['collection']['primary_asset_contracts'][0]['address']
-        project_name = data['collection']['primary_asset_contracts'][0]['name']
-        project_image_url = data['collection']['banner_image_url']
+        project_name = data['collection']['name']
         project_floor = floor_price = data["collection"]["stats"]["floor_price"]
     else:
         return None
@@ -113,6 +116,40 @@ async def get_pl_from_wallets(os_link: str, wallets: list) -> dict:
 
     # eth calculation
     print(f"Fetching {len(trade_tx_hashes) + len(gem_tx_hashes)} internal txns from etherscan api...")
+    cost_eth = sale_eth = 0
+
+    # prcoess weth transaction first because they do not have internal tx, then remove them from trade hashes
+    weth_txs_hashes = []
+    url = f"https://api.etherscan.io/api?module=account&action=tokentx&contractaddress={weth_contract}&address=0x7d93491bE90281479be4e1128fc9b028Fd69d697&startblock={start_block}&endblock={last_block}&sort=asc&apikey={etherscan_api_key}"
+    response = requests.get(url)
+    data = response.json()
+    weth_txs = data['result']
+    for weth_tx in weth_txs:
+        if weth_tx['hash'] in trade_tx_hashes:
+            if weth_tx['hash'] not in weth_txs_hashes:
+                weth_txs_hashes.append(weth_tx['hash'])
+            # find out who initiated the weth transaction w/ tx details
+            tx_detail = w3.eth.get_transaction(weth_tx['hash'])
+            amount = to_ether(weth_tx['value'])
+            if tx_detail['from'].lower() in wallets:
+                # sell case
+                if weth_tx['to'] in wallets:
+                    print(f"[{weth_tx['hash']}] Accepted offer, sold 1x {project_name} for {amount} ETH")
+                    sale_eth += amount
+                    continue
+                if weth_tx['from'] in wallets:
+                    # paying royalties
+                    print(f"[{weth_tx['hash']}] Accepted offer, paying {amount} ETH royalties")
+                    sale_eth -= amount
+                    continue
+            if tx_detail['from'] not in wallets:
+                # buy case
+                print(f"[{weth_tx['hash']}] Offer accepted, buying 1x {project_name} for {amount} ETH")
+                if weth_tx['from'] in wallets:
+                    cost_eth += amount
+
+    for weth_tx in weth_txs_hashes:
+        trade_tx_hashes.remove(weth_tx)
 
     # get internal txs for all txs
     # async request task
@@ -134,11 +171,9 @@ async def get_pl_from_wallets(os_link: str, wallets: list) -> dict:
     all_internal_txs_gems = await asyncio.gather(*tasks)
 
     print(f"Trading Details of {project_name}: ")
-    cost_eth = sale_eth = 0
     for internal_txs in all_internal_txs_trades:
         total_amount_eth_in_tx = 0
         type_of_tx = ''
-        print(internal_txs)
         for tx in internal_txs:
             total_amount_eth_in_tx += to_ether(tx['value'])
             if tx['to'] in wallets:
@@ -188,4 +223,5 @@ async def get_pl_from_wallets(os_link: str, wallets: list) -> dict:
     return {"eth_price_today": eth_price, "project_name": project_name, "project_floor": project_floor, "project_image_url": project_image_url,"total_nft_count": total_nft_count, "total_trade_count": total_trade_count, "free_and_mint_count": free_and_mint_count, "buy_count": buy_count, "sell_count": sell_count, "mint_eth": mint_eth, "cost_eth": cost_eth, "sale_eth": sale_eth}
 
 if __name__ == "__main__":
-    asyncio.run(get_pl_from_wallets("https://opensea.io/collection/thefirstborne", ["0x209af07A4B6b2D15923ffa8C3d41cDAC49BC6c4F"]))
+    asyncio.run(get_pl_from_wallets("https://opensea.io/collection/elemental-fang-lijun", ["0x7d93491bE90281479be4e1128fc9b028Fd69d697"]))
+    # !pl https://opensea.io/collection/elemental-fang-lijun 0x7d93491bE90281479be4e1128fc9b028Fd69d697
