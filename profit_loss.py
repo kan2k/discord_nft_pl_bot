@@ -69,7 +69,7 @@ async def get_pl_from_wallets(os_link: str, wallets: list) -> dict:
         data = response.json()
         project_contract_address = data['collection']['primary_asset_contracts'][0]['address']
         project_name = data['collection']['name']
-        project_floor = floor_price = data["collection"]["stats"]["floor_price"]
+        project_floor = data["collection"]["stats"]["floor_price"]
     else:
         return None
 
@@ -223,5 +223,9 @@ async def get_pl_from_wallets(os_link: str, wallets: list) -> dict:
     return {"eth_price_today": eth_price, "project_name": project_name, "project_floor": project_floor, "project_image_url": project_image_url,"total_nft_count": total_nft_count, "total_trade_count": total_trade_count, "free_and_mint_count": free_and_mint_count, "buy_count": buy_count, "sell_count": sell_count, "mint_eth": mint_eth, "cost_eth": cost_eth, "sale_eth": sale_eth}
 
 if __name__ == "__main__":
-    asyncio.run(get_pl_from_wallets("https://opensea.io/collection/elemental-fang-lijun", ["0x7d93491bE90281479be4e1128fc9b028Fd69d697"]))
+    # test: offer taken
+    # asyncio.run(get_pl_from_wallets("https://opensea.io/collection/elemental-fang-lijun", ["0x7d93491bE90281479be4e1128fc9b028Fd69d697"]))
+    # test: gem swept
+    asyncio.run(get_pl_from_wallets("https://opensea.io/collection/san-origin", ["0x4e435D2d6fCe29Ab31f9841b98D09872869C6bC0"]))
+
     # !pl https://opensea.io/collection/elemental-fang-lijun 0x7d93491bE90281479be4e1128fc9b028Fd69d697

@@ -2,12 +2,11 @@
 etherscan transaction scraper with nft data, discord bot integration
 
 ## is this bot accurate?
-no, but its close, royalties are acccounted
+its decent. the bot have accounted the following:
+royalties spent
+gas spent
 
-## what i wouldve done better
-bypass rate limit for coingecko
-account gas price for trades/mints
-should use function for get requests, currently no exception catching
+but it doesnt take eth price from the day of tx
 
 ## why is the bot speaking in chinese
 bot made in hong kong 🇭🇰
@@ -24,3 +23,6 @@ bot made in hong kong 🇭🇰
 
 ## discord bot permission
 only send messages in text permission is required
+
+## api used
+etherscan for all token transaction-related information (rate: 5 calls/sec)
