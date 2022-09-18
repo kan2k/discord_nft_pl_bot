@@ -3,7 +3,7 @@ from dotenv import dotenv_values
 import discord
 import os
 
-from profit_loss_2 import get_pl
+from profit_loss_v2 import get_pl
 
 here = os.path.dirname(os.path.abspath(__file__))
 config = dotenv_values(os.path.join(here, ".env"))
