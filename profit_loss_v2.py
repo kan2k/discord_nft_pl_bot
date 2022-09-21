@@ -156,7 +156,7 @@ async def get_pl(os_url: str, wallets: list) -> dict:
     eth_holding_value = total_nft_owned * collection['floor_price']
     realised_pl = total_eth_gained - total_eth_spent
     potential_pl = eth_holding_value + total_eth_gained - total_eth_spent
-    roi = total_eth_spent and total_eth_gained / total_eth_spent
+    roi = total_eth_spent and (total_eth_gained - total_eth_spent) / total_eth_spent * 100
 
     print('here3')
 

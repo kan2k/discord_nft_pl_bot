@@ -1,5 +1,5 @@
 import pytest
-from profit_loss_2 import get_collection_data, get_erc721_transactions, get_transaction_details, get_eth_price_with_date
+from profit_loss_v2 import get_collection_data, get_erc721_transactions, get_transaction_details, get_eth_price_with_date
 
 @pytest.fixture
 def example_fixture():
