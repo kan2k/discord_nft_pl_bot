@@ -129,7 +129,10 @@ async def get_erc721_transactions(wallet_address: str, collection_contract_addre
 
 
 async def get_pl(os_url: str, wallets: list) -> dict:
-    print('here')
+
+    block = w3.eth.get_block('latest')
+    last_block = block['number']
+    
     wallets = [s.lower() for s in wallets]
     collection = get_collection_data(os_url)
 
@@ -137,7 +140,6 @@ async def get_pl(os_url: str, wallets: list) -> dict:
     total_eth_spent = total_eth_gained = total_eth_gas_spent = 0
 
     eth_price = get_eth_price_now()
-    print('here2')
     for wallet in wallets:
         nft_per_tx_dict, nft_owned, mint_amount, buy_amount, sell_amount = await get_erc721_transactions(wallet, collection['contract_address'], )
         total_nft_owned += nft_owned
@@ -157,8 +159,6 @@ async def get_pl(os_url: str, wallets: list) -> dict:
     realised_pl = total_eth_gained - total_eth_spent
     potential_pl = eth_holding_value + total_eth_gained - total_eth_spent
     roi = total_eth_spent and (total_eth_gained - total_eth_spent) / total_eth_spent * 100
-
-    print('here3')
 
     results = { "project_name": collection['name'], 
                 "project_floor": collection['floor_price'], 
