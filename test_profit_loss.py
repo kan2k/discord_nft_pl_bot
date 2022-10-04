@@ -1,5 +1,5 @@
 import pytest
-from profit_loss_v2 import get_collection_data, get_erc721_transactions, get_transaction_details, get_eth_price_with_date
+from profit_loss_v2 import get_collection_data, get_erc721_transactions, get_transaction_details
 
 @pytest.fixture
 def example_fixture():
@@ -13,7 +13,7 @@ def test_get_collection_data():
     assert data['name'] == "Azuki"
     assert data['contract_address'] == "0xed5af388653567af2f388e6224dc7c4b3241c544"
     assert isinstance(data['floor_price'], float)
-    assert data['banner_graphic'] == "https://open-graph.opensea.io/v1/collections/azuki"
+    assert data['image'] == "https://open-graph.opensea.io/v1/collections/azuki"
 
 def test_get_erc721_count_per_transaction():
     nft_per_tx_dict, total_owned, mint_amount, buy_amount, sell_amount = get_erc721_transactions("0x4e435D2d6fCe29Ab31f9841b98D09872869C6bC0", "0x39ee2c7b3cb80254225884ca001f57118c8f21b6")
@@ -51,9 +51,9 @@ def test_get_transaction_details():
     assert details["eth_spent"] == 0.1
     assert details["eth_gained"] == 0
 
-def test_get_eth_price_with_date():
-    test_dates = ["21-07-2022", "23-07-2022", "24-07-2022"]
-    test_results = [1527.41, 1536.12, 1552.5]
-    for index, date in enumerate(test_dates):
-        result = get_eth_price_with_date(date)
-        assert result == test_results[index]
+# def test_get_eth_price_with_date():
+#     test_dates = ["21-07-2022", "23-07-2022", "24-07-2022"]
+#     test_results = [1527.41, 1536.12, 1552.5]
+#     for index, date in enumerate(test_dates):
+#         result = get_eth_price_with_date(date)
+#         assert result == test_results[index]

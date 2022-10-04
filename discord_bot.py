@@ -1,5 +1,7 @@
 from profit_loss import get_pl_from_wallets
 from dotenv import dotenv_values
+from io import BytesIO
+from image_generation import profit_image
 import discord
 import os
 
@@ -21,8 +23,9 @@ async def on_ready():
 @client.event
 async def on_message(message):
     username = str(message.author).split("#")[0]
-    user_id = int(message.author.id)
+    userId = int(message.author.id)
     user_message = str(message.content)
+    user = await client.fetch_user(userId)
     if message.author == client.user:
         return
     if message.channel.id == int(config['discord_target_channel']):
@@ -80,6 +83,13 @@ async def on_message(message):
             embed.add_field(name="已實現 ROI", value=f"`{round(data['roi'], 2)}%`")
             embed.set_image(url=data['project_image_url'])
             embed.set_thumbnail(url="https://i.imgur.com/FqJzlGW.png")
+
+            # bytes = BytesIO()
+            # img = profit_image(user, data)
+            # img.save(bytes, 'jpeg', quality=100)
+            # bytes.seek(0)
+
+            # await message.reply(embed=embed, file=discord.File(fp=bytes, filename='image.png'))
             await message.reply(embed=embed)
             await loading_msg.delete()
 

@@ -8,9 +8,6 @@ here = os.path.dirname(os.path.abspath(__file__))
 config = dotenv_values(os.path.join(here, ".env"))
 w3 = Web3(Web3.HTTPProvider(config['http_rpc']))
 etherscan_api_key = config['etherscan_api_key']
-start_block = 3914495 # Defaults at CryptoPunks creation block
-block = w3.eth.get_block('latest')
-last_block = block['number']
 null_address = "0x0000000000000000000000000000000000000000"
 weth_contract = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
 
@@ -38,7 +35,7 @@ def get_collection_data(os_url: str) -> dict:
     return {"name": name, "contract_address": contract_address, "floor_price": floor_price, "image": image}
 
 
-async def get_transaction_details(wallet_address, hash):
+async def get_transaction_details(wallet_address, hash, start_block, last_block):
     """
     returns
     from_address, to_address, gas_spent, eth_spent
@@ -95,7 +92,7 @@ async def get_transaction_details(wallet_address, hash):
             "eth_spent": to_ether(eth_spent), 
             "eth_gained": to_ether(eth_gained),} 
 
-async def get_erc721_transactions(wallet_address: str, collection_contract_address: str):
+async def get_erc721_transactions(wallet_address: str, collection_contract_address: str, start_block: str, last_block: str):
     """
     returns 
     a dict of erc721 transfer count and total num of that collection owned currently
@@ -129,26 +126,34 @@ async def get_erc721_transactions(wallet_address: str, collection_contract_addre
 
 
 async def get_pl(os_url: str, wallets: list) -> dict:
-
-    block = w3.eth.get_block('latest')
-    last_block = block['number']
-    
     wallets = [s.lower() for s in wallets]
     collection = get_collection_data(os_url)
+
+    # fetch start and last block
+    # set start block as contract creation block
+    start_block = 3914495 # Defaults at CryptoPunks creation block
+    url = f"https://api.etherscan.io/api?module=contract&action=getcontractcreation&contractaddresses={collection['contract_address']}&apikey={etherscan_api_key}"
+    response = requests.get(url)
+    data = response.json()
+    creation_hash = data['result'][0]['txHash']
+    creation_tx = w3.eth.get_transaction(creation_hash)
+    start_block = creation_tx['blockNumber']
+    block = w3.eth.get_block('latest')
+    last_block = str(block['number'])
 
     total_nft_owned = total_mint_amount = total_buy_amount = total_sell_amount = 0
     total_eth_spent = total_eth_gained = total_eth_gas_spent = 0
 
     eth_price = get_eth_price_now()
     for wallet in wallets:
-        nft_per_tx_dict, nft_owned, mint_amount, buy_amount, sell_amount = await get_erc721_transactions(wallet, collection['contract_address'], )
+        nft_per_tx_dict, nft_owned, mint_amount, buy_amount, sell_amount = await get_erc721_transactions(wallet, collection['contract_address'],start_block, last_block)
         total_nft_owned += nft_owned
         total_mint_amount += mint_amount
         total_buy_amount += buy_amount
         total_sell_amount += sell_amount
 
         for tx in nft_per_tx_dict:
-            details = await get_transaction_details(wallet, tx)
+            details = await get_transaction_details(wallet, tx, start_block, last_block)
             total_eth_spent += details["eth_spent"]
             total_eth_gained += details["eth_gained"]
             total_eth_gas_spent += details["eth_gas_spent"]
@@ -200,6 +205,9 @@ if __name__ == "__main__":
     # test: offer taken
     # asyncio.run(get_pl_from_wallets("https://opensea.io/collection/elemental-fang-lijun", ["0x7d93491bE90281479be4e1128fc9b028Fd69d697"]))
     # test: gem swept
-    asyncio.run(get_pl("https://opensea.io/collection/san-origin", ["0x4e435D2d6fCe29Ab31f9841b98D09872869C6bC0"]))
+    # asyncio.run(get_pl("https://opensea.io/collection/san-origin", ["0x4e435D2d6fCe29Ab31f9841b98D09872869C6bC0"]))
 
     # !pl https://opensea.io/collection/elemental-fang-lijun 0x7d93491bE90281479be4e1128fc9b028Fd69d697
+
+    asyncio.run(get_pl("https://opensea.io/collection/san-origin", ["0x50042aC52aE6143caCC0f900f5959c4B69eF1963"]))
+    # !pl https://opensea.io/zh-CN/collection/san-origin 0x50042aC52aE6143caCC0f900f5959c4B69eF1963
