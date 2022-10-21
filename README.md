@@ -19,7 +19,7 @@ bot made in hong kong 🇭🇰
 `discord_embed_image`
 
 ## discord command(s)
-`!pl <opensea_link>`
+`/pl <opensea_link> <wallet(s)>`
 
 ## oauth2 url generator
 scopes `bot` `application.commands`
