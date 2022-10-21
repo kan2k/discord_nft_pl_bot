@@ -36,17 +36,17 @@ async def language(interaction: discord.Integration, option: str, value: str=Non
         await interaction.response.send_message(f"Soon")
 
 def get_settings(guild_id):
-    with open("settings.json", "r") as f:
+    with open(os.path.join(here, "settings.json"), "r") as f:
         settings = json.load(f)
     return settings[str(guild_id)]
 
 def set_settings(guild_id, value):
-    with open("settings.json", "r") as f:
+    with open(os.path.join(here, "settings.json"), "r") as f:
         settings = json.load(f)
     settings[str(guild_id)] = {}
     settings[str(guild_id)]["language"] = value["language"]
     settings[str(guild_id)]["eth_decimal"] = value["eth_decimal"]
-    with open("settings.json", "w") as f:
+    with open(os.path.join(here, "settings.json"), "w") as f:
         json.dump(settings, f)
 
 @bot.event
