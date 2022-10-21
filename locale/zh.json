@@ -1,0 +1,24 @@
+{
+    "zh": {
+        "invalid_os_url": "⚠️ OpenSea 連結錯誤！ (%{os_url})",
+        "invalid_wallet": "⚠️ 錢包錯誤！ (%{wallet})",
+        "data_error": "⚠️ 數據取得錯誤！",
+        "embed_title": "P&L 數據 - %{project_name}",
+        "amount_of_wallets": "> 已收集 %{total_wallets} 個錢包數據",
+        "mint_amount": "鑄造數",
+        "floor_price": "地板價",
+        "gas_spent": "合共氣費",
+        "buy_amount": "買入數",
+        "buy_value": "合共買入",
+        "avg_buy_price": "平均買入價",
+        "sell_amount": "賣出數",
+        "sell_value": "合共賣出",
+        "avg_sell_price": "平均賣出價",
+        "amount_holding": "持有數",
+        "holding_value": "持有估值",
+        "potential_pl": "潛在 P&L",
+        "current_pl": "目前 P&L",
+        "overall_gain": "總潛在 P&L",
+        "realised_pl": "已實現 ROI"
+    }
+}

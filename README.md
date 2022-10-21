@@ -21,8 +21,9 @@ bot made in hong kong 🇭🇰
 ## discord command(s)
 `!pl <opensea_link>`
 
-## discord bot permission
-only send messages in text permission is required
+## oauth2 url generator
+scopes `bot` `application.commands`
+bot permission `send messages`
 
 ## api used
 etherscan for all token transaction-related information (rate: 5 calls/sec)

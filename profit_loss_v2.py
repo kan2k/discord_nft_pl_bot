@@ -140,7 +140,6 @@ async def get_pl(os_url: str, wallets: list) -> dict:
     start_block = creation_tx['blockNumber']
     block = w3.eth.get_block('latest')
     last_block = str(block['number'])
-
     total_nft_owned = total_mint_amount = total_buy_amount = total_sell_amount = 0
     total_eth_spent = total_eth_gained = total_eth_gas_spent = 0
 
@@ -197,7 +196,7 @@ async def get_pl(os_url: str, wallets: list) -> dict:
                 results[k] = round(v)
             if "eth" in k:
                 results[k] = round(v, 3)
-    print(results)
+    # print(results)
     return results
 
 
