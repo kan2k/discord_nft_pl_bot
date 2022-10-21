@@ -1,1 +1,6 @@
-{"926367754649481246": {"language": "zh", "eth_decimal": 3, "brand_image": "https://i.imgur.com/FqJzlGW.png", "template": "origins_template.jpg", "font": "PowerGrotesk-Regular.ttf", "magic": [[175, 175], [45, 755], [240, 830], [80, 115], [300, 230], [300, 292], [300, 352], [350, 425], [350, 492], [350, 562], [420, 632]]}}
+{
+  "926367754649481246": 
+    {"language": "zh", "eth_decimal": 3, "brand_image": "https://i.imgur.com/FqJzlGW.png", "template": "origins_template.jpg", "font": "PowerGrotesk-Regular.ttf", "magic": [[175, 175], [45, 755], [240, 830], [80, 115], [300, 230], [300, 292], [300, 352], [350, 425], [350, 492], [350, 562], [420, 632]]},
+  "934934057232523304": 
+    {"language": "zh", "eth_decimal": 3, "brand_image": "https://i.imgur.com/FqJzlGW.png", "template": "origins_template.jpg", "font": "PowerGrotesk-Regular.ttf", "magic": [[175, 175], [45, 755], [240, 830], [80, 115], [300, 230], [300, 292], [300, 352], [350, 425], [350, 492], [350, 562], [420, 632]]}
+  }
