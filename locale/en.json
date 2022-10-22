@@ -19,6 +19,6 @@
         "potential_pl": "Potential P&L",
         "current_pl": "Current P&L",
         "overall_gain": "Overall P&L",
-        "realised_pl": "Realised ROI"
+        "overall_pl": "Overall ROI"
     }
 }

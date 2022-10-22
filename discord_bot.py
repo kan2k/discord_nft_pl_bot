@@ -99,7 +99,7 @@ async def profit(interaction: discord.Integration, os_link: str, wallet_addresse
     embed.add_field(name=f"{i18n.t('potential_pl')}", value=f"`Ξ{round(data['potential_pl_eth'], eth_decimal)} (${data['potential_pl_usd']})`")
     embed.add_field(name=f"{i18n.t('current_pl')}", value=f"`Ξ{round(data['realised_pl_eth'], eth_decimal)} (${data['realised_pl_usd']})`")
     embed.add_field(name=f"{i18n.t('overall_gain')}", value=f"`Ξ{round(data['potential_pl_eth'] + data['eth_holding_value'], eth_decimal)} (${data['potential_pl_usd'] + data['usd_holding_value']})`")
-    embed.add_field(name=f"{i18n.t('realised_pl')}", value=f"`{round(data['roi'], 2)}%`")
+    embed.add_field(name=f"{i18n.t('overall_pl')}", value=f"`{round(data['roi'], 2)}%`")
     embed.set_thumbnail(url=settings['brand_image'])
 
     if settings['template'] == "":

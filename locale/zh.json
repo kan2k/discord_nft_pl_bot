@@ -19,6 +19,6 @@
         "potential_pl": "潛在 P&L",
         "current_pl": "目前 P&L",
         "overall_gain": "總潛在 P&L",
-        "realised_pl": "已實現 ROI"
+        "overall_pl": "ROI 總和"
     }
 }

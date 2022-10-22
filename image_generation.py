@@ -35,7 +35,7 @@ def generate_image(discord_name, icon, data, template, font, bold_font, magic, e
     draw.ellipse((0, 0, icon.size), fill=255)
     img = template.copy()
     img.paste(icon, magic[3], mask_im)
-    
+
     # draw data
 
     draw = ImageDraw.Draw(img)
@@ -62,9 +62,9 @@ def generate_image(discord_name, icon, data, template, font, bold_font, magic, e
         draw_text(draw, magic[12][0], f"{round((data['eth_gained'] + data['eth_holding_value']), eth_decimal)}{e}", magic[12][1], ImageFont.truetype(font, size=magic[12][2]), magic[12][3], magic[12][4])
 
     if round(data['roi']) > 0:
-        draw_text(draw, magic[13][0], f"+{round(data['roi'])}%", "green", ImageFont.truetype(bfont, size=magic[13][2]), magic[13][3], True)
+        draw_text(draw, magic[13][0], f"+{round(data['roi'])}%", "green", ImageFont.truetype(bfont, size=magic[13][2]), magic[13][3], magic[13][4])
     else:
-        draw_text(draw, magic[13][0], f"{round(data['roi'])}%", "red", ImageFont.truetype(bfont, size=magic[13][2]), magic[13][3], True)
+        draw_text(draw, magic[13][0], f"{round(data['roi'])}%", "red", ImageFont.truetype(bfont, size=magic[13][2]), magic[13][3], magic[13][4])
 
     return img
 
