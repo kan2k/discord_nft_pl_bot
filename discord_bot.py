@@ -107,7 +107,7 @@ async def profit(interaction: discord.Integration, os_link: str, wallet_addresse
         await interaction.followup.send(embed=embed, ephemeral=True)
     else:
         bytes = BytesIO()
-        img = profit_image(user, data, settings['template'], settings['font'], settings['magic'])
+        img = profit_image(user, data, settings['template'], settings['font'], settings['magic'], settings['eth_decimal'])
         img.save(bytes, 'jpeg', quality=100)
         bytes.seek(0)
         image = discord.File(bytes, filename="image.jpg")
