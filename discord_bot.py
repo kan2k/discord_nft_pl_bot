@@ -51,7 +51,7 @@ def set_settings(guild_id, value):
 
 @bot.event
 async def on_guild_join(guild):
-    default_settings = {"language": "en", "eth_decimal": 3, "brand_image": "", "template": "", "font": "", "magic": []}
+    default_settings = {"language": "en", "eth_decimal": 3, "brand_image": "", "template": "", "font": "", "bold_font": "", "magic": []}
     set_settings(str(guild.id), default_settings)
 
 @bot.tree.command(name="profit")
@@ -107,7 +107,7 @@ async def profit(interaction: discord.Integration, os_link: str, wallet_addresse
         await interaction.followup.send(embed=embed, ephemeral=True)
     else:
         bytes = BytesIO()
-        img = profit_image(user, data, settings['template'], settings['font'], settings['magic'], settings['eth_decimal'])
+        img = profit_image(user, data, settings)
         img.save(bytes, 'jpeg', quality=100)
         bytes.seek(0)
         image = discord.File(bytes, filename="image.jpg")
