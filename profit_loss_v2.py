@@ -59,7 +59,7 @@ async def get_transaction_details(wallet_address, hash, start_block, last_block)
     data = response.json()
     internal_txs = data['result']
     if internal_txs == []:
-        api_url = f"https://api.etherscan.io/api?module=account&action=tokentx&contractaddress={weth_contract}&address=0x7d93491bE90281479be4e1128fc9b028Fd69d697&startblock={start_block}&endblock={last_block}&sort=asc&apikey={etherscan_api_key}"
+        api_url = f"https://api.etherscan.io/api?module=account&action=tokentx&contractaddress={weth_contract}&address={wallet_address}&startblock={start_block}&endblock={last_block}&sort=asc&apikey={etherscan_api_key}"
         response = requests.get(api_url)
         data = response.json()
         weth_txs = data['result']
@@ -87,10 +87,17 @@ async def get_transaction_details(wallet_address, hash, start_block, last_block)
                 eth_gained += amount
             if internal_tx['from'].lower() == wallet_address:
                 eth_spent += amount
+    if eth_spent >= eth_gained:
+        return {"eth_gas_spent": to_ether(eth_gas_spent), 
+                "eth_spent": to_ether(eth_spent) - to_ether(eth_gained), 
+                "eth_gained": 0,} 
+    else:
+        return {"eth_gas_spent": to_ether(eth_gas_spent), 
+                "eth_spent": 0, 
+                "eth_gained": to_ether(eth_gained) - to_ether(eth_spent),} 
 
-    return {"eth_gas_spent": to_ether(eth_gas_spent), 
-            "eth_spent": to_ether(eth_spent), 
-            "eth_gained": to_ether(eth_gained),} 
+
+    
 
 async def get_erc721_transactions(wallet_address: str, collection_contract_address: str, start_block: str, last_block: str):
     """
@@ -210,3 +217,6 @@ if __name__ == "__main__":
 
     asyncio.run(get_pl("https://opensea.io/collection/san-origin", ["0x50042aC52aE6143caCC0f900f5959c4B69eF1963"]))
     # !pl https://opensea.io/zh-CN/collection/san-origin 0x50042aC52aE6143caCC0f900f5959c4B69eF1963
+
+    # issue #1
+    # /profit os_link: https://opensea.io/collection/yugiyn-official wallet_addresses: 0xaa8d1D1A31DA6d3f5e68e66AE03c8139D2Adfb0e

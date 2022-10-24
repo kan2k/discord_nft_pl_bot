@@ -4,7 +4,7 @@
         "invalid_wallet": "⚠️ Invalid wallet address. (%{wallet})",
         "data_error": "⚠️ Opps, Data Fetching Error.",
         "embed_title": "P&L Data - %{project_name}",
-        "amount_of_wallets": "> Collected data for %{total_wallets} wallets",
+        "amount_of_wallets": "> Collected data for %{total_wallets} wallet(s)",
         "mint_amount": "Minted",
         "floor_price": "Floor",
         "gas_spent": "Gas Spent",

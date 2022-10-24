@@ -51,15 +51,15 @@ def generate_image(discord_name, icon, data, template, font, bold_font, magic, e
     if magic[1] == 'eth_only':
         draw_text(draw, magic[7][0], f"{round(data['eth_avg_buy_price'], eth_decimal)}{e}", magic[7][1], ImageFont.truetype(font, size=magic[7][2]), magic[7][3], magic[7][4])
         draw_text(draw, magic[8][0], f"{round(data['eth_avg_sell_price'], eth_decimal)}{e}", magic[8][1], ImageFont.truetype(font, size=magic[8][2]), magic[8][3], magic[8][4])
-        draw_text(draw, magic[10][0], f"{round(data['eth_gained'], eth_decimal)}{e}", magic[10][1], ImageFont.truetype(font, size=magic[10][2]), magic[10][3], magic[10][4])
+        draw_text(draw, magic[10][0], f"{round(data['realised_pl_eth'], eth_decimal)}{e}", magic[10][1], ImageFont.truetype(font, size=magic[10][2]), magic[10][3], magic[10][4])
         draw_text(draw, magic[11][0], f"{round(data['eth_holding_value'], eth_decimal)}{e}", magic[11][1], ImageFont.truetype(font, size=magic[11][2]), magic[11][3], magic[11][4])
-        draw_text(draw, magic[12][0], f"{round((data['eth_gained'] + data['eth_holding_value']), eth_decimal)}{e}", magic[12][1], ImageFont.truetype(bfont, size=magic[12][2]), magic[12][3], magic[12][4])
+        draw_text(draw, magic[12][0], f"{round((data['realised_pl_eth'] + data['eth_holding_value']), eth_decimal)}{e}", magic[12][1], ImageFont.truetype(bfont, size=magic[12][2]), magic[12][3], magic[12][4])
     else:
         draw_text(draw, magic[7][0], f"{round(data['eth_avg_buy_price'], eth_decimal)}{e} (${data['usd_avg_buy_price']})", magic[7][1], ImageFont.truetype(font, size=magic[7][2]), magic[7][3], magic[7][4])
         draw_text(draw, magic[8][0], f"{round(data['eth_avg_sell_price'], eth_decimal)}{e} (${data['usd_avg_sell_price']})", magic[8][1], ImageFont.truetype(font, size=magic[8][2]), magic[8][3], magic[8][4])
-        draw_text(draw, magic[10][0], f"{round(data['eth_gained'], eth_decimal)}{e} (${data['usd_gained']})", magic[10][1], ImageFont.truetype(font, size=magic[10][2]), magic[10][3], magic[10][4])
+        draw_text(draw, magic[10][0], f"{round(data['realised_pl_eth'], eth_decimal)}{e} (${data['realised_pl_usd']})", magic[10][1], ImageFont.truetype(font, size=magic[10][2]), magic[10][3], magic[10][4])
         draw_text(draw, magic[11][0], f"{round(data['eth_holding_value'], eth_decimal)}{e} (${data['usd_holding_value']})", magic[11][1], ImageFont.truetype(font, size=magic[11][2]), magic[11][3], magic[11][4])
-        draw_text(draw, magic[12][0], f"{round((data['eth_gained'] + data['eth_holding_value']), eth_decimal)}{e}", magic[12][1], ImageFont.truetype(font, size=magic[12][2]), magic[12][3], magic[12][4])
+        draw_text(draw, magic[12][0], f"{round((data['realised_pl_eth'] + data['eth_holding_value']), eth_decimal)}{e}", magic[12][1], ImageFont.truetype(font, size=magic[12][2]), magic[12][3], magic[12][4])
 
     if round(data['roi']) > 0:
         draw_text(draw, magic[13][0], f"+{round(data['roi'])}%", "green", ImageFont.truetype(bfont, size=magic[13][2]), magic[13][3], magic[13][4])
