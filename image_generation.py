@@ -61,7 +61,7 @@ def generate_image(discord_name, icon, data, template, font, bold_font, magic, e
         draw_text(draw, magic[11][0], f"{round(data['eth_holding_value'], eth_decimal)}{e} (${data['usd_holding_value']})", magic[11][1], ImageFont.truetype(font, size=magic[11][2]), magic[11][3], magic[11][4])
         draw_text(draw, magic[12][0], f"{round((data['realised_pl_eth'] + data['eth_holding_value']), eth_decimal)}{e}", magic[12][1], ImageFont.truetype(font, size=magic[12][2]), magic[12][3], magic[12][4])
 
-    if round(data['roi']) > 0:
+    if round(data['roi']) >= 0:
         draw_text(draw, magic[13][0], f"+{round(data['roi'])}%", "green", ImageFont.truetype(bfont, size=magic[13][2]), magic[13][3], magic[13][4])
     else:
         draw_text(draw, magic[13][0], f"{round(data['roi'])}%", "red", ImageFont.truetype(bfont, size=magic[13][2]), magic[13][3], magic[13][4])

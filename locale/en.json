@@ -18,7 +18,6 @@
         "holding_value": "Value",
         "potential_pl": "Potential P&L",
         "current_pl": "Current P&L",
-        "overall_gain": "Overall P&L",
-        "overall_pl": "Overall ROI"
+        "roi": "ROI"
     }
 }

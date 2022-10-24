@@ -3,7 +3,7 @@ from profit_loss_v2 import get_pl
 from discord import app_commands
 from discord.ext import commands
 from dotenv import dotenv_values
-import discord, os, json, i18n
+import discord, os, json, i18n, asyncio
 from io import BytesIO
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -79,7 +79,6 @@ async def profit(interaction: discord.Integration, os_link: str, wallet_addresse
         data = await get_pl(os_link, clean_wallets)
     except:
         await interaction.followup.send(f"{i18n.t('data_error')}", ephemeral=True)
-        print(data)
         return
     
     eth_decimal = settings['eth_decimal']
@@ -98,8 +97,7 @@ async def profit(interaction: discord.Integration, os_link: str, wallet_addresse
     embed.add_field(name=f"{i18n.t('holding_value')}", value=f"`Ξ{round(data['eth_holding_value'], eth_decimal)} (${data['usd_holding_value']})`")
     embed.add_field(name=f"{i18n.t('potential_pl')}", value=f"`Ξ{round(data['potential_pl_eth'], eth_decimal)} (${data['potential_pl_usd']})`")
     embed.add_field(name=f"{i18n.t('current_pl')}", value=f"`Ξ{round(data['realised_pl_eth'], eth_decimal)} (${data['realised_pl_usd']})`")
-    embed.add_field(name=f"{i18n.t('overall_gain')}", value=f"`Ξ{round(data['potential_pl_eth'] + data['eth_holding_value'], eth_decimal)} (${data['potential_pl_usd'] + data['usd_holding_value']})`")
-    embed.add_field(name=f"{i18n.t('overall_pl')}", value=f"`{round(data['roi'], 2)}%`")
+    embed.add_field(name=f"{i18n.t('roi')}", value=f"`{round(data['roi'], 2)}%`")
     embed.set_thumbnail(url=settings['brand_image'])
 
     if settings['template'] == "":
@@ -114,8 +112,5 @@ async def profit(interaction: discord.Integration, os_link: str, wallet_addresse
         # embed.set_image(url="attachment://image.jpg")
         await interaction.followup.send(embed=embed, file=image, ephemeral=True)
 
-def start_bot():
-    bot.run(config["discord_bot_token"])
-
 if __name__ == '__main__':
-    start_bot()
+    bot.run(config["discord_bot_token"])

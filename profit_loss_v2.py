@@ -4,6 +4,21 @@ import requests, os, aiohttp, asyncio, datetime
 from web3 import Web3
 from collections import Counter
 
+class Fetch:
+    def __init__(self, limit, rate):
+        self.limit = limit
+        self.rate = rate
+
+    async def make_request(self, url, hash):
+        async with self.limit:
+            async with aiohttp.ClientSession() as session:
+                async with session.request(method = 'GET', url = url) as response:
+                    json = await response.json()
+                    if response.status != 200:
+                        response.raise_for_status()
+                    await asyncio.sleep(self.rate)
+                    return [hash, json['result']]
+
 here = os.path.dirname(os.path.abspath(__file__))
 config = dotenv_values(os.path.join(here, ".env"))
 w3 = Web3(Web3.HTTPProvider(config['http_rpc']))
@@ -35,34 +50,29 @@ def get_collection_data(os_url: str) -> dict:
     return {"name": name, "contract_address": contract_address, "floor_price": floor_price, "image": image}
 
 
-async def get_transaction_details(wallet_address, hash, start_block, last_block):
+async def get_transaction_details(wallet_address, tx_hash, weth_txs, internal_txs):
     """
     returns
     from_address, to_address, gas_spent, eth_spent
     """
     wallet_address = wallet_address.lower()
-    tx = w3.eth.get_transaction(hash)
+    tx = w3.eth.get_transaction(tx_hash)
     from_address = tx['from'].lower()
     to_address = tx['to'].lower()
 
     # Transaction fee in ETH = gasPrice * gasUsed, only calculated when the wallet is the one who initiate the tx
     # figure out eth spent and gain with internal txs
-    receipt = w3.eth.get_transaction_receipt(hash)
+    receipt = w3.eth.get_transaction_receipt(tx_hash)
     eth_gas_spent = eth_spent = eth_gained = 0
     if from_address == wallet_address:
         eth_gas_spent = tx['gasPrice'] * receipt['gasUsed']
         eth_spent += tx['value']
 
-
-    api_url = f"https://api.etherscan.io/api?module=account&action=txlistinternal&txhash={hash}&apikey={etherscan_api_key}"
-    response = requests.get(api_url)
-    data = response.json()
-    internal_txs = data['result']
+    # api_url = f"https://api.etherscan.io/api?module=account&action=txlistinternal&txhash={hash}&apikey={etherscan_api_key}"
+    # response = requests.get(api_url)
+    # data = response.json()
+    # internal_txs = data['result']
     if internal_txs == []:
-        api_url = f"https://api.etherscan.io/api?module=account&action=tokentx&contractaddress={weth_contract}&address={wallet_address}&startblock={start_block}&endblock={last_block}&sort=asc&apikey={etherscan_api_key}"
-        response = requests.get(api_url)
-        data = response.json()
-        weth_txs = data['result']
         # no internal txs and weth, taking contract value
         amount = int(tx['value'])
         if weth_txs == []:
@@ -73,7 +83,7 @@ async def get_transaction_details(wallet_address, hash, start_block, last_block)
         else:
             for weth_tx in weth_txs:
                 amount = int(weth_tx['value'])
-                if weth_tx['hash'] != hash:
+                if weth_tx['hash'] != tx_hash:
                     continue
                 if weth_tx['from'] == wallet_address:
                     eth_spent += amount
@@ -158,8 +168,21 @@ async def get_pl(os_url: str, wallets: list) -> dict:
         total_buy_amount += buy_amount
         total_sell_amount += sell_amount
 
-        for tx in nft_per_tx_dict:
-            details = await get_transaction_details(wallet, tx, start_block, last_block)
+        api_url = f"https://api.etherscan.io/api?module=account&action=tokentx&contractaddress={weth_contract}&address={wallet}&startblock={start_block}&endblock={last_block}&sort=asc&apikey={etherscan_api_key}"
+        response = requests.get(api_url)
+        data = response.json()
+        weth_txs = data['result']
+
+        f = Fetch(limit=asyncio.Semaphore(5), rate=1)
+        tasks = []
+        for tx_hash in nft_per_tx_dict:
+            tasks.append(f.make_request(url=f"https://api.etherscan.io/api?module=account&action=txlistinternal&txhash={tx_hash}&apikey={etherscan_api_key}", hash=tx_hash))
+        internal_txs = await asyncio.gather(*tasks)
+
+        for tx in internal_txs:
+            tx_hash = tx[0]
+            internal_tx = tx[1]
+            details = await get_transaction_details(wallet, tx_hash, weth_txs, internal_tx)
             total_eth_spent += details["eth_spent"]
             total_eth_gained += details["eth_gained"]
             total_eth_gas_spent += details["eth_gas_spent"]

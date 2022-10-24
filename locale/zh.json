@@ -18,7 +18,6 @@
         "holding_value": "持有估值",
         "potential_pl": "潛在 P&L",
         "current_pl": "目前 P&L",
-        "overall_gain": "總潛在 P&L",
-        "overall_pl": "ROI 總和"
+        "roi": "ROI 總和"
     }
 }
