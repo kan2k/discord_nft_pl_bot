@@ -2,7 +2,7 @@
     "en": {
         "invalid_os_url": "⚠️ Invalid OpenSea url. (%{os_url})",
         "invalid_wallet": "⚠️ Invalid wallet address. (%{wallet})",
-        "data_error": "⚠️ Opps, Data Fetching Error.",
+        "data_error": "⚠️ Opps, data fetching error. Try again later!",
         "embed_title": "P&L Data - %{project_name}",
         "amount_of_wallets": "> Collected data for %{total_wallets} wallet(s)",
         "mint_amount": "Minted",

@@ -149,6 +149,8 @@ async def get_pl(os_url: str, wallets: list) -> dict:
     wallets = [s.lower() for s in wallets]
     collection = get_collection_data(os_url)
 
+    tracking = requests.get(config['count_api_tracking'])
+
     # fetch start and last block
     # set start block as contract creation block
     start_block = 3914495 # Defaults at CryptoPunks creation block
@@ -192,6 +194,8 @@ async def get_pl(os_url: str, wallets: list) -> dict:
     eth_avg_sell_price = total_sell_amount and total_eth_gained / total_sell_amount
     eth_holding_value = total_nft_owned * collection['floor_price']
     realised_pl = total_eth_gained - total_eth_spent
+    if realised_pl < 0:
+        realised_pl = 0
     potential_pl = eth_holding_value + total_eth_gained - total_eth_spent
     roi = total_eth_spent and (eth_holding_value + total_eth_gained - total_eth_spent) / total_eth_spent * 100
 
