@@ -80,9 +80,22 @@ async def profit(interaction: discord.Integration, os_link: str, wallet_addresse
     except:
         await interaction.followup.send(f"{i18n.t('data_error')}", ephemeral=True)
         return
-    
+
     eth_decimal = settings['eth_decimal']
-    embed = discord.Embed(title=f"{i18n.t('embed_title', project_name=data['project_name'])}", description=f"{i18n.t('amount_of_wallets', total_wallets=len(clean_wallets))}", color=discord.Colour.purple())
+
+    message_1 = i18n.t('amount_of_wallets', total_wallets=len(clean_wallets))
+
+    if data['break_even_amount'] > 0:
+        message_2 = i18n.t('break_even_amount', break_even_amount=round(data['break_even_amount'])) + "\n"
+    if data['break_even_amount'] > data['total_nft_owned']:
+        message_2 = ""
+    if data['break_even_amount'] < 0:
+        message_2 = i18n.t('already_break_even')
+
+    if data['break_even_price'] > 0:
+        message_2 += i18n.t('break_even_price', break_even_price=round(data['break_even_price'], eth_decimal))
+
+    embed = discord.Embed(title=f"{i18n.t('embed_title', project_name=data['project_name'])}", description=f"{message_1}\n{message_2}", color=discord.Colour.purple())
     embed.set_footer(text="Powered by https://twitter.com/Jaasonft", icon_url="https://i.imgur.com/6ZaSEwK.png")
     embed.add_field(name=f"{i18n.t('mint_amount')} \u200B \u200B \u200B \u200B", value=f"`{data['total_mint_amount']}`", inline=True)
     embed.add_field(name=f"{i18n.t('floor_price')}", value=f"`Ξ{round(data['project_floor'], eth_decimal)} (${data['project_floor_usd']})`")

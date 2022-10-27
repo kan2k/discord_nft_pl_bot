@@ -18,6 +18,9 @@
         "holding_value": "Value",
         "potential_pl": "Potential P&L",
         "current_pl": "Current P&L",
-        "roi": "ROI"
+        "roi": "ROI",
+        "break_even_amount": "> You have to sell %{break_even_amount} to break even.",
+        "break_even_price": "> The floor price have to be ~Ξ%{break_even_price} to break even.",
+        "already_break_even": "> You have already broke even."
     }
 }

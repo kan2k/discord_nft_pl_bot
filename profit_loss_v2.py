@@ -194,8 +194,12 @@ async def get_pl(os_url: str, wallets: list) -> dict:
     eth_avg_sell_price = total_sell_amount and total_eth_gained / total_sell_amount
     eth_holding_value = total_nft_owned * collection['floor_price']
     realised_pl = total_eth_gained - total_eth_spent
+    break_even_amount = break_even_price = 0
     if realised_pl < 0:
         realised_pl = 0
+        break_even_amount = round((total_eth_spent - total_eth_gained) / collection['floor_price'])
+        if break_even_amount > total_nft_owned:
+            break_even_price = (total_eth_spent - total_eth_gained) / total_nft_owned
     potential_pl = eth_holding_value + total_eth_gained - total_eth_spent
     roi = total_eth_spent and (eth_holding_value + total_eth_gained - total_eth_spent) / total_eth_spent * 100
 
@@ -224,7 +228,10 @@ async def get_pl(os_url: str, wallets: list) -> dict:
                 "realised_pl_usd": realised_pl * eth_price,
                 "potential_pl_eth": potential_pl,
                 "potential_pl_usd": potential_pl * eth_price,
-                "roi": roi, }
+                "roi": roi, 
+                "break_even_amount": break_even_amount,
+                "break_even_price": break_even_price 
+                }
     for k, v in results.items():
         if not isinstance(results[k], str):
             if "usd" in k:

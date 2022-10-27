@@ -2,7 +2,7 @@
     "zh": {
         "invalid_os_url": "⚠️ OpenSea 連結錯誤！ (%{os_url})",
         "invalid_wallet": "⚠️ 錢包錯誤！ (%{wallet})",
-        "data_error": "⚠️ 數據取得錯誤！",
+        "data_error": "⚠️ 數據取得錯誤，請稍後重新嘗試。",
         "embed_title": "P&L 數據 - %{project_name}",
         "amount_of_wallets": "> 已收集 %{total_wallets} 個錢包數據",
         "mint_amount": "鑄造數",
@@ -18,6 +18,9 @@
         "holding_value": "持有估值",
         "potential_pl": "潛在 P&L",
         "current_pl": "目前 P&L",
-        "roi": "ROI 總和"
+        "roi": "ROI 總和",
+        "break_even_amount": "> 你需要賣 %{break_even_amount} 個才可以拿回成本",
+        "break_even_price": "> 地板價須到 ~Ξ%{break_even_price} 才能拿回成本。",
+        "already_break_even": "> 你已經賺回成本了"
     }
 }
