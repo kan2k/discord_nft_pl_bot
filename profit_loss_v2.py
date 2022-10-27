@@ -67,17 +67,14 @@ async def get_transaction_details(wallet_address, tx_hash, weth_txs, internal_tx
     if from_address == wallet_address:
         eth_gas_spent = tx['gasPrice'] * receipt['gasUsed']
         eth_spent += tx['value']
+        
 
-    # api_url = f"https://api.etherscan.io/api?module=account&action=txlistinternal&txhash={hash}&apikey={etherscan_api_key}"
-    # response = requests.get(api_url)
-    # data = response.json()
-    # internal_txs = data['result']
     if internal_txs == []:
         # no internal txs and weth, taking contract value
         amount = int(tx['value'])
         if weth_txs == []:
-            if from_address == wallet_address:
-                eth_spent += amount
+            # if from_address == wallet_address:
+            #     eth_spent += amount
             if to_address == wallet_address:
                 eth_gained += amount
         else:
@@ -97,6 +94,7 @@ async def get_transaction_details(wallet_address, tx_hash, weth_txs, internal_tx
                 eth_gained += amount
             if internal_tx['from'].lower() == wallet_address:
                 eth_spent += amount
+
     if eth_spent >= eth_gained:
         return {"eth_gas_spent": to_ether(eth_gas_spent), 
                 "eth_spent": to_ether(eth_spent) - to_ether(eth_gained), 
@@ -127,17 +125,22 @@ async def get_erc721_transactions(wallet_address: str, collection_contract_addre
         if hash not in nft_per_tx_dict:
             nft_per_tx_dict[hash] = 0
 
-        if transaction['to'] == wallet_address: # token transfer in
+        if transaction['from'] == null_address: # token is minted
+            mint_amount += 1
+            nft_owned += 1
+            continue
+
+        elif transaction['to'] == wallet_address: # token transfer in
             nft_per_tx_dict[hash] += 1
             buy_amount += 1
             nft_owned += 1
+            continue
 
-        if transaction['from'] == null_address: # token is minted
-            mint_amount += 1
-        if transaction['from'] == wallet_address: # token transfer out
+        elif transaction['from'] == wallet_address: # token transfer out
             nft_per_tx_dict[hash] -= 1
             sell_amount += 1
             nft_owned -= 1
+            continue
 
     return nft_per_tx_dict, nft_owned, mint_amount, buy_amount, sell_amount
 
@@ -149,8 +152,7 @@ async def get_pl(os_url: str, wallets: list) -> dict:
     # fetch start and last block
     # set start block as contract creation block
     start_block = 3914495 # Defaults at CryptoPunks creation block
-    url = f"https://api.etherscan.io/api?module=contract&action=getcontractcreation&contractaddresses={collection['contract_address']}&apikey={etherscan_api_key}"
-    response = requests.get(url)
+    response = requests.get(f"https://api.etherscan.io/api?module=contract&action=getcontractcreation&contractaddresses={collection['contract_address']}&apikey={etherscan_api_key}")
     data = response.json()
     creation_hash = data['result'][0]['txHash']
     creation_tx = w3.eth.get_transaction(creation_hash)
@@ -162,7 +164,7 @@ async def get_pl(os_url: str, wallets: list) -> dict:
 
     eth_price = get_eth_price_now()
     for wallet in wallets:
-        nft_per_tx_dict, nft_owned, mint_amount, buy_amount, sell_amount = await get_erc721_transactions(wallet, collection['contract_address'],start_block, last_block)
+        nft_per_tx_dict, nft_owned, mint_amount, buy_amount, sell_amount = await get_erc721_transactions(wallet, collection['contract_address'], start_block, last_block)
         total_nft_owned += nft_owned
         total_mint_amount += mint_amount
         total_buy_amount += buy_amount
@@ -186,7 +188,6 @@ async def get_pl(os_url: str, wallets: list) -> dict:
             total_eth_spent += details["eth_spent"]
             total_eth_gained += details["eth_gained"]
             total_eth_gas_spent += details["eth_gas_spent"]
-
     eth_avg_buy_price = total_mint_amount + total_buy_amount and total_eth_spent / (total_mint_amount + total_buy_amount)
     eth_avg_sell_price = total_sell_amount and total_eth_gained / total_sell_amount
     eth_holding_value = total_nft_owned * collection['floor_price']
@@ -238,7 +239,7 @@ if __name__ == "__main__":
 
     # !pl https://opensea.io/collection/elemental-fang-lijun 0x7d93491bE90281479be4e1128fc9b028Fd69d697
 
-    asyncio.run(get_pl("https://opensea.io/collection/san-origin", ["0x50042aC52aE6143caCC0f900f5959c4B69eF1963"]))
+    asyncio.run(get_pl("https://opensea.io/collection/fridaybeersnft", ["0x83Bff380D2c59F88F3132542fb23B40AfCf361d7"]))
     # !pl https://opensea.io/zh-CN/collection/san-origin 0x50042aC52aE6143caCC0f900f5959c4B69eF1963
 
     # issue #1
