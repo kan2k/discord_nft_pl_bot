@@ -19,8 +19,8 @@
         "potential_pl": "潛在 P&L",
         "current_pl": "目前 P&L",
         "roi": "ROI 總和",
-        "break_even_amount": "> 你需要賣 %{break_even_amount} 個才可以拿回成本",
-        "break_even_price": "> 地板價須到 ~Ξ%{break_even_price} 才能拿回成本。",
+        "break_even_amount": "> 你需要賣 %{break_even_amount} 個才可以回本",
+        "break_even_price": "> 需要地板價到達 Ξ%{break_even_price} 才可以回本。",
         "already_break_even": "> 你已經賺回成本了"
     }
 }
