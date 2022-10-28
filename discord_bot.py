@@ -84,6 +84,7 @@ async def profit(interaction: discord.Integration, os_link: str, wallet_addresse
     eth_decimal = settings['eth_decimal']
 
     message_1 = i18n.t('amount_of_wallets', total_wallets=len(clean_wallets))
+    message_2 = ""
 
     if data['break_even_amount'] > 0:
         message_2 = i18n.t('break_even_amount', break_even_amount=round(data['break_even_amount'])) + "\n"
