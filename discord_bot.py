@@ -3,7 +3,7 @@ from profit_loss_v2 import get_pl
 from discord import app_commands
 from discord.ext import commands
 from dotenv import dotenv_values
-import discord, os, json, i18n, asyncio
+import discord, os, json, i18n, typing, functools
 from io import BytesIO
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -55,17 +55,22 @@ async def on_guild_join(guild):
     set_settings(str(guild.id), default_settings)
 
 @bot.tree.command(name="profit")
-@app_commands.describe(os_link="Opensea URL", wallet_addresses="Wallet Address")
-async def profit(interaction: discord.Integration, os_link: str, wallet_addresses: str):
+@app_commands.describe(collection="contract address or Opensea URL", wallet_addresses="Wallet Address")
+async def profit(interaction: discord.Integration, collection: str, wallet_addresses: str):
     await interaction.response.defer(ephemeral=True)
     user = await bot.fetch_user(interaction.user.id)
-    print(f"> [{interaction.guild.name}] {interaction.user.name} requested {os_link} for wallets {wallet_addresses}")
+    print(f"> [{interaction.guild.name}] {interaction.user.name} requested {collection} for wallets {wallet_addresses}")
     settings = get_settings(interaction.guild_id)
     i18n.set('locale', settings['language'])
 
-    if "opensea.io" not in os_link:
-        await interaction.followup.send(f"{i18n.t('invalid_os_url', os_url=os_link)}", ephemeral=True)
+    if collection.startswith('0x'):
+        await interaction.followup.send(f"⚠️ Sorry, I don't support contract address yet.", ephemeral=True)
         return
+
+    if "opensea.io" not in collection and not collection.startswith('0x') and len(collection) != 42:
+        await interaction.followup.send(f"{i18n.t('invalid_collection', collection=collection)}", ephemeral=True)
+        return
+
     clean_wallets = []
     for wallet in wallet_addresses.split(" "):
         if len(wallet) != 42 or wallet[:2] != "0x":
@@ -74,10 +79,11 @@ async def profit(interaction: discord.Integration, os_link: str, wallet_addresse
         if wallet not in clean_wallets:
             clean_wallets.append(wallet.lower())
     
-    
     try:
-        data = await get_pl(os_link, clean_wallets)
-    except:
+        # data = await run_blocking(get_pl, collection, clean_wallets)
+        data = await get_pl(collection, clean_wallets)
+    except Exception as e:
+        print(e)
         await interaction.followup.send(f"{i18n.t('data_error')}", ephemeral=True)
         return
 
@@ -125,6 +131,11 @@ async def profit(interaction: discord.Integration, os_link: str, wallet_addresse
         image = discord.File(bytes, filename="image.jpg")
         # embed.set_image(url="attachment://image.jpg")
         await interaction.followup.send(embed=embed, file=image, ephemeral=True)
+
+# async def run_blocking(blocking_func: typing.Callable, *args, **kwargs) -> typing.Any:
+#     """Runs a blocking function in a non-blocking way"""
+#     func = functools.partial(blocking_func, *args, **kwargs) # `run_in_executor` doesn't support kwargs, `functools.partial` does
+#     return await bot.loop.run_in_executor(None, func)
 
 if __name__ == '__main__':
     bot.run(config["discord_bot_token"])

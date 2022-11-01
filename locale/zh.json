@@ -1,6 +1,6 @@
 {
     "zh": {
-        "invalid_os_url": "⚠️ OpenSea 連結錯誤！ (%{os_url})",
+        "invalid_collection": "⚠️ 項目資料錯誤！ (%{collection})",
         "invalid_wallet": "⚠️ 錢包錯誤！ (%{wallet})",
         "data_error": "⚠️ 數據取得錯誤，請稍後重新嘗試。",
         "embed_title": "P&L 數據 - %{project_name}",

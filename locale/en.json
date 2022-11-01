@@ -1,6 +1,6 @@
 {
     "en": {
-        "invalid_os_url": "⚠️ Invalid OpenSea url. (%{os_url})",
+        "invalid_collection": "⚠️ Invalid colellction. (%{collection})",
         "invalid_wallet": "⚠️ Invalid wallet address. (%{wallet})",
         "data_error": "⚠️ Opps, data fetching error. Try again later!",
         "embed_title": "P&L Data - %{project_name}",

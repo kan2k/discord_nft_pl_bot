@@ -1,4 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
 from dotenv import dotenv_values
 import requests, os, aiohttp, asyncio, datetime
 from web3 import Web3
@@ -35,18 +34,22 @@ def get_eth_price_now():
     data = res.json()
     return round(float(data["data"]['rates']['USDC']), 1)
 
-def get_collection_data(os_url: str) -> dict:
+def get_collection_data(arg: str) -> dict:
     """
     returns collection data in dict
     """
-    collection = os_url.lower().replace("www.", "").replace("zh-cn/", "").replace("zh-tw/", "").replace("https://opensea.io/collection/", "")
-    api_url = "https://api.opensea.io/collection/" + collection
-    response = requests.get(api_url)
+    if '/' in arg:
+        slug = arg.lower().replace("www.", "").replace("zh-cn/", "").replace("zh-tw/", "").replace("https://opensea.io/collection/", "")
+    elif arg.startswith('0x'):
+        response = requests.get(f"https://api.opensea.io/api/v1/asset_contract/{arg}")
+        data = response.json()
+        slug = data['collection']['slug']
+    response = requests.get(f"https://api.opensea.io/collection/" + slug)
     data = response.json()
     name = data['collection']['name']
     contract_address = data['collection']['primary_asset_contracts'][0]['address']
     floor_price = data["collection"]["stats"]["floor_price"]
-    image = "https://open-graph.opensea.io/v1/collections/" + collection
+    image = "https://open-graph.opensea.io/v1/collections/" + slug
     return {"name": name, "contract_address": contract_address, "floor_price": floor_price, "image": image}
 
 
@@ -107,13 +110,13 @@ async def get_transaction_details(wallet_address, tx_hash, weth_txs, internal_tx
 
     
 
-async def get_erc721_transactions(wallet_address: str, collection_contract_address: str, start_block: str, last_block: str):
+async def get_erc721_transactions(query_wallets, query_wallet: str, collection_contract_address: str, start_block: str, last_block: str):
     """
     returns 
     a dict of erc721 transfer count and total num of that collection owned currently
         e.g. total nft in (denoted as positive num) and total nft out (negative) per transcation
     """
-    wallet_address = wallet_address.lower()
+    wallet_address = query_wallet.lower()
     api_url = f"https://api.etherscan.io/api?module=account&action=tokennfttx&contractaddress={collection_contract_address}&address={wallet_address}&startblock={start_block}&endblock={last_block}&sort=asc&apikey={etherscan_api_key}"
     response = requests.get(api_url)
     data = response.json()
@@ -126,17 +129,18 @@ async def get_erc721_transactions(wallet_address: str, collection_contract_addre
             nft_per_tx_dict[hash] = 0
 
         if transaction['from'] == null_address: # token is minted
+            nft_per_tx_dict[hash] += 1
             mint_amount += 1
             nft_owned += 1
             continue
 
-        elif transaction['to'] == wallet_address: # token transfer in
+        elif transaction['to'] == wallet_address and transaction['from'] not in query_wallets: # token transfer in
             nft_per_tx_dict[hash] += 1
             buy_amount += 1
             nft_owned += 1
             continue
 
-        elif transaction['from'] == wallet_address: # token transfer out
+        elif transaction['from'] == wallet_address and transaction['to'] not in query_wallets: # token transfer out
             nft_per_tx_dict[hash] -= 1
             sell_amount += 1
             nft_owned -= 1
@@ -146,6 +150,7 @@ async def get_erc721_transactions(wallet_address: str, collection_contract_addre
 
 
 async def get_pl(os_url: str, wallets: list) -> dict:
+    
     wallets = [s.lower() for s in wallets]
     collection = get_collection_data(os_url)
 
@@ -166,18 +171,26 @@ async def get_pl(os_url: str, wallets: list) -> dict:
 
     eth_price = get_eth_price_now()
     for wallet in wallets:
-        nft_per_tx_dict, nft_owned, mint_amount, buy_amount, sell_amount = await get_erc721_transactions(wallet, collection['contract_address'], start_block, last_block)
+        # print(f"Working on {wallet}...")
+        # print(f"Processing transactions related to the collection")
+        nft_per_tx_dict, nft_owned, mint_amount, buy_amount, sell_amount = await get_erc721_transactions(wallets, wallet, collection['contract_address'], start_block, last_block)
+        if not nft_per_tx_dict:
+            continue
         total_nft_owned += nft_owned
         total_mint_amount += mint_amount
         total_buy_amount += buy_amount
         total_sell_amount += sell_amount
+
+        # print(f"Processing offers")
 
         api_url = f"https://api.etherscan.io/api?module=account&action=tokentx&contractaddress={weth_contract}&address={wallet}&startblock={start_block}&endblock={last_block}&sort=asc&apikey={etherscan_api_key}"
         response = requests.get(api_url)
         data = response.json()
         weth_txs = data['result']
 
-        f = Fetch(limit=asyncio.Semaphore(5), rate=1.1)
+        # print(f"Processing internal txs")
+
+        f = Fetch(limit=asyncio.Semaphore(4), rate=1)
         tasks = []
         for tx_hash in nft_per_tx_dict:
             tasks.append(f.make_request(url=f"https://api.etherscan.io/api?module=account&action=txlistinternal&txhash={tx_hash}&apikey={etherscan_api_key}", hash=tx_hash))
@@ -190,6 +203,9 @@ async def get_pl(os_url: str, wallets: list) -> dict:
             total_eth_spent += details["eth_spent"]
             total_eth_gained += details["eth_gained"]
             total_eth_gas_spent += details["eth_gas_spent"]
+
+        # print(f"Done {wallet}")
+
     eth_avg_buy_price = total_mint_amount + total_buy_amount and total_eth_spent / (total_mint_amount + total_buy_amount)
     eth_avg_sell_price = total_sell_amount and total_eth_gained / total_sell_amount
     eth_holding_value = total_nft_owned * collection['floor_price']
@@ -199,9 +215,13 @@ async def get_pl(os_url: str, wallets: list) -> dict:
         realised_pl = 0
         break_even_amount = round((total_eth_spent - total_eth_gained) / collection['floor_price'])
         if break_even_amount > total_nft_owned:
-            break_even_price = (total_eth_spent - total_eth_gained) / total_nft_owned
+            break_even_price = total_nft_owned and (total_eth_spent - total_eth_gained) / total_nft_owned
     potential_pl = eth_holding_value + total_eth_gained - total_eth_spent
-    roi = total_eth_spent and (eth_holding_value + total_eth_gained - total_eth_spent) / total_eth_spent * 100
+
+    if total_eth_spent == 0:
+        roi = eth_holding_value + total_eth_gained * 100
+    else:
+        roi = (eth_holding_value + total_eth_gained - total_eth_spent) / (total_eth_spent + total_eth_gas_spent) * 100
 
     results = { "project_name": collection['name'], 
                 "project_floor": collection['floor_price'], 
@@ -238,20 +258,19 @@ async def get_pl(os_url: str, wallets: list) -> dict:
                 results[k] = round(v)
             if "eth" in k:
                 results[k] = round(v, 3)
-    # print(results)
     return results
 
-
 if __name__ == "__main__":
+    print('Testing...')
+
+    # test: nft was moved to a staking contract
+    print(asyncio.run(get_pl("https://opensea.io/collection/ethernalelves", ["0x608C57F77D2FFEf584bd61f19D229432475d00f7", "0x8EB0Ba946E03847E9D23B5BE2Ac0Ca397BC59a72", "0x9f90Ab8517Bb89A612FfeBe92E5CcF2Db99Ab6a5", "0xb7B28e1171f32a46A2425A9558A6e7fA053E5b3E", "0x743280c1CF6194DA4E8BF818691efE95Bfcba266", "0xA98C0f13343d034904049acA9Cf702c763eb2FEF", "0x581650e95f2601E832Bf8c9722ccCE672f9Dd8e0", "0x1c6387D26b6B8d73cD512661A6746e236DB0b1C4", "0x16775dC3c55Fcb7E272F1027fF68118f360f3D85", "0x754EF2969A3Fd57fccAEa07322b4Ea70C9E62F2c", "0xA70a9F530Ce78BdFf59A59388Cf88Ff825c68160", "0x8cf3BF4a523DB74b6A639CE00E932D97d10E645F", "0x78955B46C788Ba04F11867701c255a8AcD7d15C0", "0xB1E6DeA5F280C8cA5d49a911284f3002be351ce7", "0x000c987F621B3788F84112fa7a1E8B42AB8CC212"])))
+
+    # test: free mint, big ROI %
+    # print(asyncio.run(get_pl("https://opensea.io/collection/castaways-the-islands", ["0x14f69c8c334c4c6ea526c58ae94b1431826ace94"])))
+
     # test: offer taken
     # asyncio.run(get_pl_from_wallets("https://opensea.io/collection/elemental-fang-lijun", ["0x7d93491bE90281479be4e1128fc9b028Fd69d697"]))
+
     # test: gem swept
     # asyncio.run(get_pl("https://opensea.io/collection/san-origin", ["0x4e435D2d6fCe29Ab31f9841b98D09872869C6bC0"]))
-
-    # !pl https://opensea.io/collection/elemental-fang-lijun 0x7d93491bE90281479be4e1128fc9b028Fd69d697
-
-    asyncio.run(get_pl("https://opensea.io/collection/fridaybeersnft", ["0x83Bff380D2c59F88F3132542fb23B40AfCf361d7"]))
-    # !pl https://opensea.io/zh-CN/collection/san-origin 0x50042aC52aE6143caCC0f900f5959c4B69eF1963
-
-    # issue #1
-    # /profit os_link: https://opensea.io/collection/yugiyn-official wallet_addresses: 0xaa8d1D1A31DA6d3f5e68e66AE03c8139D2Adfb0e

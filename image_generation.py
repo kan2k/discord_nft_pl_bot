@@ -45,7 +45,7 @@ def generate_image(discord_name, icon, data, template, font, bold_font, magic, e
     eth_symbol = magic[0]
     e = eth_symbol
 
-    draw_text(draw, magic[6][0], str(data['total_buy_amount']), magic[6][1], ImageFont.truetype(font, size=magic[6][2]), magic[6][3], magic[6][4])
+    draw_text(draw, magic[6][0], str( data['total_buy_amount'] + data['total_mint_amount']), magic[6][1], ImageFont.truetype(font, size=magic[6][2]), magic[6][3], magic[6][4])
     draw_text(draw, magic[9][0], f"{data['total_nft_owned']}", magic[9][1], ImageFont.truetype(font, size=magic[9][2]), magic[9][3], magic[9][4])
 
     if magic[1] == 'eth_only':
