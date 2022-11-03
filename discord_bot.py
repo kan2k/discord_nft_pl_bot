@@ -63,10 +63,6 @@ async def profit(interaction: discord.Integration, collection: str, wallet_addre
     settings = get_settings(interaction.guild_id)
     i18n.set('locale', settings['language'])
 
-    if collection.startswith('0x'):
-        await interaction.followup.send(f"⚠️ Sorry, I don't support contract address yet.", ephemeral=True)
-        return
-
     if "opensea.io" not in collection and not collection.startswith('0x') and len(collection) != 42:
         await interaction.followup.send(f"{i18n.t('invalid_collection', collection=collection)}", ephemeral=True)
         return

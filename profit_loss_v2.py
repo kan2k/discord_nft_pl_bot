@@ -25,6 +25,11 @@ etherscan_api_key = config['etherscan_api_key']
 null_address = "0x0000000000000000000000000000000000000000"
 weth_contract = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
 
+os_headers = {
+    "accept": "application/json",
+    "X-API-KEY": config['opensea_api_key']
+}
+
 def to_ether(wei):
     return float(w3.fromWei(int(wei), 'ether'))
 
@@ -41,7 +46,7 @@ def get_collection_data(arg: str) -> dict:
     if '/' in arg:
         slug = arg.lower().replace("www.", "").replace("zh-cn/", "").replace("zh-tw/", "").replace("https://opensea.io/collection/", "")
     elif arg.startswith('0x'):
-        response = requests.get(f"https://api.opensea.io/api/v1/asset_contract/{arg}")
+        response = requests.get(f"https://api.opensea.io/api/v1/asset_contract/{arg}", headers=os_headers)
         data = response.json()
         slug = data['collection']['slug']
     response = requests.get(f"https://api.opensea.io/collection/" + slug)
@@ -205,7 +210,7 @@ async def get_pl(os_url: str, wallets: list) -> dict:
             total_eth_gas_spent += details["eth_gas_spent"]
 
         # print(f"Done {wallet}")
-
+    total_eth_spent += total_eth_gas_spent
     eth_avg_buy_price = total_mint_amount + total_buy_amount and total_eth_spent / (total_mint_amount + total_buy_amount)
     eth_avg_sell_price = total_sell_amount and total_eth_gained / total_sell_amount
     eth_holding_value = total_nft_owned * collection['floor_price']
