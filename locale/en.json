@@ -21,6 +21,17 @@
         "roi": "ROI",
         "break_even_amount": "> You have to sell %{break_even_amount} to break even.",
         "break_even_price": "> The floor price have to be Ξ%{break_even_price} to break even.",
-        "already_break_even": "> You have already broke even."
+        "already_break_even": "> You have already broke even.",
+        "wallet_embed_title": "%{discord_name}'s wallets",
+        "wallet_profile": "Your profile(s)",
+        "wallets_for_profile": "Current Profile: %{profile}",
+        "total_wallets": "total wallets: %{count}",
+        "invalid_profile": "⚠️ Invalid wallet profile. (%{profile})",
+        "missing_parameter": "⚠️ Missing parameters.",
+        "deleted_wallets_profile": "✅ Deleted %{message} from profile `%{profile}`",
+        "deleted_profile": "✅ Deleted profile `%{profile}`",
+        "profile_does_not_exist": "⚠️ Profile `%{profile}` does not exist.",
+        "profile_created": "✅ Created profile `%{profile}`",
+        "profile_edited": "✅ Edited profile `%{profile}`"
     }
 }
