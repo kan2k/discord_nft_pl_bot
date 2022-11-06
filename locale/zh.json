@@ -6,6 +6,9 @@
         "embed_title": "P&L 數據 - %{project_name}",
         "amount_of_wallets": "> 已收集 %{total_wallets} 個錢包數據",
         "mint_amount": "鑄造數",
+        "mint_spent": "合共鑄造",
+        "avg_mint_spent": "平均鑄造價",
+        "total_spent": "總花費",
         "floor_price": "地板價",
         "gas_spent": "合共氣費",
         "buy_amount": "買入數",
@@ -21,6 +24,17 @@
         "roi": "ROI 總和",
         "break_even_amount": "> 你需要賣 %{break_even_amount} 個才可以回本",
         "break_even_price": "> 需要地板價到達 Ξ%{break_even_price} 才可以回本。",
-        "already_break_even": "> 你已經賺回成本了"
+        "already_break_even": "> 你已經賺回成本了",
+        "wallet_embed_title": "%{discord_name} 的錢包配置",
+        "wallet_profile": "錢包配置",
+        "wallets_for_profile": "錢包配置: %{profile}",
+        "total_wallets": "共 %{count} 個錢包",
+        "invalid_profile": "⚠️ 錢包配置錯誤！ (%{profile})",
+        "missing_parameter": "⚠️ 缺少參數。",
+        "deleted_wallets_profile": "✅ 從 `%{profile}` 中刪除了 %{message}",
+        "deleted_profile": "✅ 已刪除配置 `%{profile}`",
+        "profile_does_not_exist": "⚠️ 配置 `%{profile}` 不存在。",
+        "profile_created": "✅ 已創建配置 `%{profile}`",
+        "profile_edited": "✅ 已編輯配置 `%{profile}`"
     }
 }

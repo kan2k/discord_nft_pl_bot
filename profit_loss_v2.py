@@ -71,8 +71,10 @@ async def get_transaction_details(wallet_address, tx_hash, weth_txs, internal_tx
     # Transaction fee in ETH = gasPrice * gasUsed, only calculated when the wallet is the one who initiate the tx
     # figure out eth spent and gain with internal txs
     receipt = w3.eth.get_transaction_receipt(tx_hash)
-    eth_gas_spent = eth_spent = eth_gained = 0
-    if from_address == wallet_address:
+    eth_gas_spent = eth_mint_spent = eth_spent = eth_gained = 0
+    if to_address == '0x05da517b1bf9999b7762eaefa8372341a1a47559'.lower():
+        eth_mint_spent += tx['value']
+    elif from_address == wallet_address:
         eth_gas_spent = tx['gasPrice'] * receipt['gasUsed']
         eth_spent += tx['value']
         
@@ -104,11 +106,13 @@ async def get_transaction_details(wallet_address, tx_hash, weth_txs, internal_tx
                 eth_spent += amount
 
     if eth_spent >= eth_gained:
-        return {"eth_gas_spent": to_ether(eth_gas_spent), 
+        return {"eth_gas_spent": to_ether(eth_gas_spent),
+                "eth_mint_spent": to_ether(eth_mint_spent),
                 "eth_spent": to_ether(eth_spent) - to_ether(eth_gained), 
                 "eth_gained": 0,} 
     else:
-        return {"eth_gas_spent": to_ether(eth_gas_spent), 
+        return {"eth_gas_spent": to_ether(eth_gas_spent),
+                "eth_mint_spent": to_ether(eth_mint_spent),
                 "eth_spent": 0, 
                 "eth_gained": to_ether(eth_gained) - to_ether(eth_spent),} 
 
@@ -172,7 +176,7 @@ async def get_pl(os_url: str, wallets: list) -> dict:
     block = w3.eth.get_block('latest')
     last_block = str(block['number'])
     total_nft_owned = total_mint_amount = total_buy_amount = total_sell_amount = 0
-    total_eth_spent = total_eth_gained = total_eth_gas_spent = 0
+    total_eth_buy_spent = total_eth_gained = total_eth_gas_spent = total_eth_mint_spent = 0
 
     eth_price = get_eth_price_now()
     for wallet in wallets:
@@ -205,13 +209,15 @@ async def get_pl(os_url: str, wallets: list) -> dict:
             tx_hash = tx[0]
             internal_tx = tx[1]
             details = await get_transaction_details(wallet, tx_hash, weth_txs, internal_tx)
-            total_eth_spent += details["eth_spent"]
+            total_eth_buy_spent += details["eth_spent"]
             total_eth_gained += details["eth_gained"]
             total_eth_gas_spent += details["eth_gas_spent"]
+            total_eth_mint_spent += details["eth_mint_spent"]
 
-        # print(f"Done {wallet}")
-    total_eth_spent += total_eth_gas_spent
-    eth_avg_buy_price = total_mint_amount + total_buy_amount and total_eth_spent / (total_mint_amount + total_buy_amount)
+    total_eth_spent = total_eth_buy_spent + total_eth_mint_spent + total_eth_gas_spent 
+    total_eth_mint_spent = total_eth_mint_spent
+    eth_avg_mint_price = total_mint_amount and total_eth_mint_spent / total_mint_amount
+    eth_avg_buy_price = total_buy_amount and total_eth_buy_spent / total_buy_amount
     eth_avg_sell_price = total_sell_amount and total_eth_gained / total_sell_amount
     eth_holding_value = total_nft_owned * collection['floor_price']
     realised_pl = total_eth_gained - total_eth_spent
@@ -239,10 +245,16 @@ async def get_pl(os_url: str, wallets: list) -> dict:
                 "total_sell_amount": total_sell_amount, 
                 "eth_gas_spent": total_eth_gas_spent,
                 "usd_gas_spent": total_eth_gas_spent * eth_price,
-                "eth_spent": total_eth_spent,
+                "eth_mint_spent": total_eth_mint_spent,
+                "usd_mint_spent": total_eth_mint_spent * eth_price,
+                "eth_buy_spent": total_eth_buy_spent,
+                "usd_buy_spent": total_eth_buy_spent * eth_price,
+                "eth_total_spent": total_eth_spent,
+                "usd_total_spent": total_eth_spent * eth_price,
                 "eth_gained": total_eth_gained,
-                "usd_spent": total_eth_spent * eth_price,
                 "usd_gained": total_eth_gained * eth_price,
+                "eth_avg_mint_price": eth_avg_mint_price,
+                "usd_avg_mint_price": eth_avg_mint_price * eth_price,
                 "eth_avg_buy_price": eth_avg_buy_price,
                 "usd_avg_buy_price": eth_avg_buy_price * eth_price,
                 "eth_avg_sell_price": eth_avg_sell_price,
@@ -269,7 +281,10 @@ if __name__ == "__main__":
     print('Testing...')
 
     # test: nft was moved to a staking contract
-    print(asyncio.run(get_pl("https://opensea.io/collection/ethernalelves", ["0x608C57F77D2FFEf584bd61f19D229432475d00f7", "0x8EB0Ba946E03847E9D23B5BE2Ac0Ca397BC59a72", "0x9f90Ab8517Bb89A612FfeBe92E5CcF2Db99Ab6a5", "0xb7B28e1171f32a46A2425A9558A6e7fA053E5b3E", "0x743280c1CF6194DA4E8BF818691efE95Bfcba266", "0xA98C0f13343d034904049acA9Cf702c763eb2FEF", "0x581650e95f2601E832Bf8c9722ccCE672f9Dd8e0", "0x1c6387D26b6B8d73cD512661A6746e236DB0b1C4", "0x16775dC3c55Fcb7E272F1027fF68118f360f3D85", "0x754EF2969A3Fd57fccAEa07322b4Ea70C9E62F2c", "0xA70a9F530Ce78BdFf59A59388Cf88Ff825c68160", "0x8cf3BF4a523DB74b6A639CE00E932D97d10E645F", "0x78955B46C788Ba04F11867701c255a8AcD7d15C0", "0xB1E6DeA5F280C8cA5d49a911284f3002be351ce7", "0x000c987F621B3788F84112fa7a1E8B42AB8CC212"])))
+    # print(asyncio.run(get_pl("https://opensea.io/collection/ethernalelves", ["0x608C57F77D2FFEf584bd61f19D229432475d00f7", "0x8EB0Ba946E03847E9D23B5BE2Ac0Ca397BC59a72", "0x9f90Ab8517Bb89A612FfeBe92E5CcF2Db99Ab6a5", "0xb7B28e1171f32a46A2425A9558A6e7fA053E5b3E", "0x743280c1CF6194DA4E8BF818691efE95Bfcba266", "0xA98C0f13343d034904049acA9Cf702c763eb2FEF", "0x581650e95f2601E832Bf8c9722ccCE672f9Dd8e0", "0x1c6387D26b6B8d73cD512661A6746e236DB0b1C4", "0x16775dC3c55Fcb7E272F1027fF68118f360f3D85", "0x754EF2969A3Fd57fccAEa07322b4Ea70C9E62F2c", "0xA70a9F530Ce78BdFf59A59388Cf88Ff825c68160", "0x8cf3BF4a523DB74b6A639CE00E932D97d10E645F", "0x78955B46C788Ba04F11867701c255a8AcD7d15C0", "0xB1E6DeA5F280C8cA5d49a911284f3002be351ce7", "0x000c987F621B3788F84112fa7a1E8B42AB8CC212"])))
+
+    # test: minted 2 for 0.2 each
+    print(asyncio.run(get_pl("https://opensea.io/collection/kprverse", ["0x83Bff380D2c59F88F3132542fb23B40AfCf361d7"])))
 
     # test: free mint, big ROI %
     # print(asyncio.run(get_pl("https://opensea.io/collection/castaways-the-islands", ["0x14f69c8c334c4c6ea526c58ae94b1431826ace94"])))
