@@ -93,7 +93,7 @@ async def profit(interaction: discord.Integration, action: str, profile: str=Non
     if action.lower() == 'view':
         if not profile:
             embed = discord.Embed(title=f"{i18n.t('wallet_embed_title', discord_name=discord_user.name)}", description=f"", color=discord.Colour.purple())
-            embed.set_footer(text="Powered by Jaason#4444 (https://twitter.com/Jaasonft)", icon_url="https://i.imgur.com/6ZaSEwK.png")
+            embed.set_footer(text="Powered by Jaason#4444 (https://twitter.com/Jaasonft)", icon_url="https://i.imgur.com/bOEIgEn.png")
             wallet_message = ""
             for profile_key in user.profile.keys():
                 wallet_count = len(user.profile[profile_key])
@@ -103,7 +103,7 @@ async def profit(interaction: discord.Integration, action: str, profile: str=Non
             await interaction.followup.send(embed=embed, ephemeral=True)
         else:
             embed = discord.Embed(title=f"{i18n.t('wallet_embed_title', discord_name=discord_user.name)}", description=f"", color=discord.Colour.purple())
-            embed.set_footer(text="Powered by Jaason#4444 (https://twitter.com/Jaasonft)", icon_url="https://i.imgur.com/6ZaSEwK.png")
+            embed.set_footer(text="Powered by Jaason#4444 (https://twitter.com/Jaasonft)", icon_url="https://i.imgur.com/bOEIgEn.png")
             wallet_message = ""
             try:
                 for wallet in user.profile[profile]:
@@ -225,7 +225,7 @@ async def profit(interaction: discord.Integration, collection: str, wallet_profi
         message_2 += i18n.t('break_even_price', break_even_price=round(data['break_even_price'], eth_decimal))
 
     embed = discord.Embed(title=f"{i18n.t('embed_title', project_name=data['project_name'])}", description=f"{message_1}\n{message_2}", color=discord.Colour.purple())
-    embed.set_footer(text="Powered by Jaason#4444 (https://twitter.com/Jaasonft)", icon_url="https://i.imgur.com/6ZaSEwK.png")
+    embed.set_footer(text="Powered by Jaason#4444 (https://twitter.com/Jaasonft)", icon_url="https://i.imgur.com/bOEIgEn.png")
     embed.add_field(name=f"{i18n.t('mint_amount')} \u200B \u200B \u200B \u200B", value=f"`{data['total_mint_amount']}`", inline=True)
     embed.add_field(name=f"{i18n.t('mint_spent')}", value=f"`Ξ{round(data['eth_mint_spent'], eth_decimal)} (${data['usd_mint_spent']})`")
     embed.add_field(name=f"{i18n.t('avg_mint_spent')}", value=f"`Ξ{round(data['eth_avg_mint_price'], eth_decimal)} (${data['usd_avg_mint_price']})`")
