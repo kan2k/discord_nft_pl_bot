@@ -33,25 +33,19 @@ def generate_image(discord_name, icon, data, settings):
     template = Image.open(os.path.join(here, "resources", "templates", template))
     
     template = template.resize((width, height), Image.ANTIALIAS)
-    W, H = template.size
 
-    # crop to circle and draw discord icon
+    # crop accordingly and draw discord icon onto template
     img = template.copy()
     icon = icon.resize((magic[2][0], magic[2][1]), Image.ANTIALIAS)
+    mask_im = Image.new("L", icon.size, 0)
+    draw = ImageDraw.Draw(mask_im)
     if magic[2][2] == "circle":
-        mask_im = Image.new("L", icon.size, 0)
-        draw = ImageDraw.Draw(mask_im)
         draw.ellipse((0, 0, icon.size), fill=255)
-        img = template.copy()
-        img.paste(icon, magic[3], mask_im)
     elif magic[2][2] == "tbp_special":
         # icon.size = 155 , 155
-        mask_im = Image.new("L", icon.size, 0)
-        draw = ImageDraw.Draw(mask_im)
         points = [(20, 0), (0, 20), (0, 154), (134, 154), (154, 134), (154, 0), (20, 0)]
         draw.polygon(points, fill=255)
-        img = template.copy()
-        img.paste(icon, magic[3], mask_im)
+    img.paste(icon, magic[3], mask_im)
 
     # draw data
     draw = ImageDraw.Draw(img)
