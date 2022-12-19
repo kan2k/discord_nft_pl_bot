@@ -3,7 +3,7 @@ from profit_loss_v2 import get_pl
 from discord import app_commands
 from discord.ext import commands
 from dotenv import dotenv_values
-import discord, os, json, i18n, typing, functools
+import discord, os, json, i18n, requests
 from io import BytesIO
 
 from sqlalchemy import create_engine, Column, String, Integer, CHAR, PickleType
@@ -180,6 +180,8 @@ async def profit(interaction: discord.Integration, action: str, profile: str=Non
         print("DATABASE ERROR:",e)
         session.rollback()
         
+# @bot.tree.command(name="tx")
+# @app_commands.describe(collection="contract address or Opensea URL", wallet_profile="Wallet Profile")
 
 @bot.tree.command(name="profit")
 @app_commands.describe(collection="contract address or Opensea URL", wallet_profile="Wallet Profile")
@@ -188,6 +190,9 @@ async def profit(interaction: discord.Integration, collection: str, wallet_profi
     discord_user = await bot.fetch_user(interaction.user.id)
     print(f"> [{interaction.guild.name}] {interaction.user.name} requested {collection} for wallets {wallet_profile}")
     settings = get_settings(interaction.guild_id)
+
+    tracking = requests.get(f"https://api.countapi.xyz/hit/{settings['tracking_id']}")
+
     i18n.set('locale', settings['language'])
 
     if "opensea.io" not in collection and not collection.startswith('0x') and len(collection) != 42:

@@ -1,7 +1,6 @@
 from dotenv import dotenv_values
-import requests, os, aiohttp, asyncio, datetime
+import requests, os, aiohttp, asyncio
 from web3 import Web3
-from collections import Counter
 
 class Fetch:
     def __init__(self, limit, rate):
@@ -157,13 +156,16 @@ async def get_erc721_transactions(query_wallets, query_wallet: str, collection_c
 
     return nft_per_tx_dict, nft_owned, mint_amount, buy_amount, sell_amount
 
+async def get_tx(os_url: str, wallets: list) -> dict:
+
+    wallets = [s.lower() for s in wallets]
+    collection = get_collection_data(os_url)
+
 
 async def get_pl(os_url: str, wallets: list) -> dict:
     
     wallets = [s.lower() for s in wallets]
     collection = get_collection_data(os_url)
-
-    tracking = requests.get(config['count_api_tracking'])
 
     # fetch start and last block
     # set start block as contract creation block
@@ -209,6 +211,15 @@ async def get_pl(os_url: str, wallets: list) -> dict:
             tx_hash = tx[0]
             internal_tx = tx[1]
             details = await get_transaction_details(wallet, tx_hash, weth_txs, internal_tx)
+            if details["eth_mint_spent"] > 0:
+                print(f"[{tx_hash}] MINTED {nft_per_tx_dict[tx_hash]} for {details['eth_mint_spent'] + details['eth_gas_spent']}")
+            elif details["eth_spent"] > 0:
+                print(f"[{tx_hash}] BOUGHT {nft_per_tx_dict[tx_hash]} for {details['eth_spent']}")
+            elif details["eth_gained"] > 0:
+                print(f"[{tx_hash}] SOLD {nft_per_tx_dict[tx_hash]} for {details['eth_gained']}")
+            else:
+                print(f"[{tx_hash}] UNKNOWN {nft_per_tx_dict[tx_hash]}")
+            # print(f"[{tx_hash}] {total_eth_gained - total_eth_buy_spent - total_eth_mint_spent - total_eth_gas_spent}")
             total_eth_buy_spent += details["eth_spent"]
             total_eth_gained += details["eth_gained"]
             total_eth_gas_spent += details["eth_gas_spent"]
