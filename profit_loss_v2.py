@@ -22,7 +22,9 @@ config = dotenv_values(os.path.join(here, ".env"))
 w3 = Web3(Web3.HTTPProvider(config['http_rpc']))
 etherscan_api_key = config['etherscan_api_key']
 null_address = "0x0000000000000000000000000000000000000000"
-weth_contract = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+weth_contract = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2".lower()
+blur_contract = "0x000000000000ad05ccc4f10045630fb830b95127"
+blur_pool_contract = "0x0000000000A39bb272e79075ade125fd351887Ac".lower()
 
 os_headers = {
     "accept": "application/json",
@@ -30,7 +32,7 @@ os_headers = {
 }
 
 def to_ether(wei):
-    return float(w3.fromWei(int(wei), 'ether'))
+    return round(float(w3.fromWei(int(wei), 'ether')), 5)
 
 def get_eth_price_now():
     url = "https://api.coinbase.com/v2/exchange-rates?currency=ETH"
@@ -42,22 +44,25 @@ def get_collection_data(arg: str) -> dict:
     """
     returns collection data in dict
     """
-    if '/' in arg:
-        slug = arg.lower().replace("www.", "").replace("zh-cn/", "").replace("zh-tw/", "").replace("https://opensea.io/collection/", "")
-    elif arg.startswith('0x'):
-        response = requests.get(f"https://api.opensea.io/api/v1/asset_contract/{arg}", headers=os_headers)
+    try:
+        if '/' in arg:
+            slug = arg.lower().replace("www.", "").replace("zh-cn/", "").replace("zh-tw/", "").replace("https://opensea.io/collection/", "")
+        elif arg.startswith('0x'):
+            response = requests.get(f"https://api.opensea.io/api/v1/asset_contract/{arg}", headers=os_headers)
+            data = response.json()
+            slug = data['collection']['slug']
+        response = requests.get(f"https://api.opensea.io/collection/" + slug)
         data = response.json()
-        slug = data['collection']['slug']
-    response = requests.get(f"https://api.opensea.io/collection/" + slug)
-    data = response.json()
-    name = data['collection']['name']
-    contract_address = data['collection']['primary_asset_contracts'][0]['address']
-    floor_price = data["collection"]["stats"]["floor_price"]
-    image = "https://open-graph.opensea.io/v1/collections/" + slug
-    return {"name": name, "contract_address": contract_address, "floor_price": floor_price, "image": image}
+        name = data['collection']['name']
+        contract_address = data['collection']['primary_asset_contracts'][0]['address']
+        floor_price = data["collection"]["stats"]["floor_price"]
+        image = "https://open-graph.opensea.io/v1/collections/" + slug
+        return {"name": name, "contract_address": contract_address, "floor_price": floor_price, "image": image}
+    except:
+        raise Exception(f"unknown collection")
 
 
-async def get_transaction_details(wallet_address, tx_hash, weth_txs, internal_txs):
+async def get_transaction_details(wallet_address, tx_hash, weth_txs, internal_txs, blur_pool_txs):
     """
     returns
     from_address, to_address, gas_spent, eth_spent
@@ -71,12 +76,11 @@ async def get_transaction_details(wallet_address, tx_hash, weth_txs, internal_tx
     # figure out eth spent and gain with internal txs
     receipt = w3.eth.get_transaction_receipt(tx_hash)
     eth_gas_spent = eth_mint_spent = eth_spent = eth_gained = 0
-    if to_address == '0x05da517b1bf9999b7762eaefa8372341a1a47559'.lower():
-        eth_mint_spent += tx['value']
-    elif from_address == wallet_address:
+    # if to_address == wallet_address.lower():
+    #     eth_mint_spent += tx['value']
+    if from_address == wallet_address:
         eth_gas_spent = tx['gasPrice'] * receipt['gasUsed']
         eth_spent += tx['value']
-        
 
     if internal_txs == []:
         # no internal txs and weth, taking contract value
@@ -104,16 +108,34 @@ async def get_transaction_details(wallet_address, tx_hash, weth_txs, internal_tx
             if internal_tx['from'].lower() == wallet_address:
                 eth_spent += amount
 
+    if eth_spent > eth_gained:
+        tx_type = "BUY"
+    elif eth_spent < eth_gained:
+        tx_type = "SELL"
+    else:
+        tx_type = "TRANSFER"
+
+    if tx_hash in blur_pool_txs:
+        if blur_pool_txs[tx_hash] >= 0:
+            tx_type = "BLUR_SELL"
+            eth_gained += blur_pool_txs[tx_hash]
+        else:
+            tx_type = "BLUR_BUY"
+            eth_spent += blur_pool_txs[tx_hash]
     if eth_spent >= eth_gained:
         return {"eth_gas_spent": to_ether(eth_gas_spent),
                 "eth_mint_spent": to_ether(eth_mint_spent),
                 "eth_spent": to_ether(eth_spent) - to_ether(eth_gained), 
-                "eth_gained": 0,} 
+                "eth_gained": 0,
+                "tx_type": tx_type,
+                "case": "1"}
     else:
         return {"eth_gas_spent": to_ether(eth_gas_spent),
                 "eth_mint_spent": to_ether(eth_mint_spent),
                 "eth_spent": 0, 
-                "eth_gained": to_ether(eth_gained) - to_ether(eth_spent),} 
+                "eth_gained": to_ether(eth_gained) - to_ether(eth_spent),
+                "tx_type": tx_type,
+                "case": "2"}
 
 
     
@@ -163,9 +185,12 @@ async def get_tx(os_url: str, wallets: list) -> dict:
 
 
 async def get_pl(os_url: str, wallets: list) -> dict:
-    
     wallets = [s.lower() for s in wallets]
     collection = get_collection_data(os_url)
+
+    # delisted nft collection have floor_price of zero
+    if (collection['floor_price'] == None):
+        collection['floor_price'] = 0
 
     # fetch start and last block
     # set start block as contract creation block
@@ -182,7 +207,7 @@ async def get_pl(os_url: str, wallets: list) -> dict:
 
     eth_price = get_eth_price_now()
     for wallet in wallets:
-        # print(f"Working on {wallet}...")
+        print(f"Working on {wallet}...")
         # print(f"Processing transactions related to the collection")
         nft_per_tx_dict, nft_owned, mint_amount, buy_amount, sell_amount = await get_erc721_transactions(wallets, wallet, collection['contract_address'], start_block, last_block)
         if not nft_per_tx_dict:
@@ -199,6 +224,28 @@ async def get_pl(os_url: str, wallets: list) -> dict:
         data = response.json()
         weth_txs = data['result']
 
+        # print(f"Processing BLUR POOL txs")
+
+        api_url = f"https://api.etherscan.io/api?module=account&action=tokentx&contractaddress={blur_pool_contract}&address={wallet}&startblock={start_block}&endblock={last_block}&sort=asc&apikey={etherscan_api_key}"
+        response = requests.get(api_url)
+        data = response.json()
+        blur_pool_txs = data['result']
+        clean_blur_pool_txs = {}
+        for blur_pool_tx in blur_pool_txs:
+            if blur_pool_tx['to'] == null_address:
+                continue
+            if blur_pool_tx["hash"] in clean_blur_pool_txs:
+                if blur_pool_tx['to'] == wallet:
+                    clean_blur_pool_txs[blur_pool_tx["hash"]] += int(blur_pool_tx["value"])
+                else:
+                    clean_blur_pool_txs[blur_pool_tx["hash"]] -= int(blur_pool_tx["value"])
+            else:
+                if blur_pool_tx['to'] == wallet:
+                    clean_blur_pool_txs[blur_pool_tx["hash"]] = int(blur_pool_tx["value"])
+                else:
+                    clean_blur_pool_txs[blur_pool_tx["hash"]] = int(blur_pool_tx["value"]) * -1
+
+
         # print(f"Processing internal txs")
 
         f = Fetch(limit=asyncio.Semaphore(4), rate=1)
@@ -210,21 +257,13 @@ async def get_pl(os_url: str, wallets: list) -> dict:
         for tx in internal_txs:
             tx_hash = tx[0]
             internal_tx = tx[1]
-            details = await get_transaction_details(wallet, tx_hash, weth_txs, internal_tx)
-            if details["eth_mint_spent"] > 0:
-                print(f"[{tx_hash}] MINTED {nft_per_tx_dict[tx_hash]} for {details['eth_mint_spent'] + details['eth_gas_spent']}")
-            elif details["eth_spent"] > 0:
-                print(f"[{tx_hash}] BOUGHT {nft_per_tx_dict[tx_hash]} for {details['eth_spent']}")
-            elif details["eth_gained"] > 0:
-                print(f"[{tx_hash}] SOLD {nft_per_tx_dict[tx_hash]} for {details['eth_gained']}")
-            else:
-                print(f"[{tx_hash}] UNKNOWN {nft_per_tx_dict[tx_hash]}")
+            details = await get_transaction_details(wallet, tx_hash, weth_txs, internal_tx, clean_blur_pool_txs)
+            print(f"[{tx_hash}] {details['tx_type']} {nft_per_tx_dict[tx_hash]} item for {details['eth_gained'] - details['eth_spent'] - details['eth_mint_spent']}Ξ ({round(details['eth_gas_spent'], 4)} gas)")
             # print(f"[{tx_hash}] {total_eth_gained - total_eth_buy_spent - total_eth_mint_spent - total_eth_gas_spent}")
             total_eth_buy_spent += details["eth_spent"]
             total_eth_gained += details["eth_gained"]
             total_eth_gas_spent += details["eth_gas_spent"]
             total_eth_mint_spent += details["eth_mint_spent"]
-
     total_eth_spent = total_eth_buy_spent + total_eth_mint_spent + total_eth_gas_spent 
     total_eth_mint_spent = total_eth_mint_spent
     eth_avg_mint_price = total_mint_amount and total_eth_mint_spent / total_mint_amount
@@ -239,12 +278,10 @@ async def get_pl(os_url: str, wallets: list) -> dict:
         if break_even_amount > total_nft_owned:
             break_even_price = total_nft_owned and (total_eth_spent - total_eth_gained) / total_nft_owned
     potential_pl = eth_holding_value + total_eth_gained - total_eth_spent
-
     if total_eth_spent == 0:
         roi = eth_holding_value + total_eth_gained * 100
     else:
         roi = (eth_holding_value + total_eth_gained - total_eth_spent) / (total_eth_spent + total_eth_gas_spent) * 100
-
     results = { "project_name": collection['name'], 
                 "project_floor": collection['floor_price'], 
                 "project_floor_usd": collection['floor_price'] * eth_price, 

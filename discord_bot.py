@@ -3,9 +3,8 @@ from profit_loss_v2 import get_pl
 from discord import app_commands
 from discord.ext import commands
 from dotenv import dotenv_values
-import discord, os, json, i18n, requests
+import discord, os, json, i18n, requests, traceback
 from io import BytesIO
-
 from sqlalchemy import create_engine, Column, String, Integer, CHAR, PickleType
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.mutable import MutableDict
@@ -135,7 +134,6 @@ async def profit(interaction: discord.Integration, action: str, profile: str=Non
             except:
                 # profile wallet add
                 user.profile[profile] = wallets
-                print(user.profile[profile])
                 await interaction.followup.send(f"{i18n.t('profile_created', profile=profile)}", ephemeral=True)
         else:
             # profile wallet create
@@ -210,8 +208,8 @@ async def profit(interaction: discord.Integration, collection: str, wallet_profi
         # data = await run_blocking(get_pl, collection, clean_wallets)
         data = await get_pl(collection, wallets)
     except Exception as e:
-        print(e)
-        await interaction.followup.send(f"{i18n.t('data_error')}", ephemeral=True)
+        print(traceback.format_exc())
+        await interaction.followup.send(f"{i18n.t('data_error')} `({e})`", ephemeral=True)
         return
 
     eth_decimal = settings['eth_decimal']
@@ -272,8 +270,6 @@ async def profit(interaction: discord.Integration, collection: str, wallet_profi
 def clean_wallets(list_of_wallets):
     clean_wallets = []
     for wallet in list_of_wallets:
-        print(wallet)
-        print(len(wallet))
         if len(wallet) != 42 or wallet[:2] != "0x":
             raise Exception(f"{wallet}")
         if wallet not in clean_wallets:
