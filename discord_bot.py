@@ -75,10 +75,10 @@ def set_settings(guild_id, value):
     with open(os.path.join(here, "settings.json"), "w") as f:
         json.dump(settings, f)
 
-@bot.event
-async def on_guild_join(guild):
-    default_settings = {"language": "en", "eth_decimal": 3, "brand_image": "", "template": "", "font": "", "bold_font": "", "magic": []}
-    set_settings(str(guild.id), default_settings)
+# @bot.event
+# async def on_guild_join(guild):
+#     default_settings = {"language": "en", "eth_decimal": 3, "brand_image": "", "template": "", "font": "", "bold_font": "", "magic": []}
+#     set_settings(str(guild.id), default_settings)
 
 @bot.tree.command(name="wallet")
 @app_commands.describe(action="action", profile="profile", wallets="wallets")
