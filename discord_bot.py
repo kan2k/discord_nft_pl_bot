@@ -91,7 +91,7 @@ async def profit(interaction: discord.Integration, action: str, profile: str=Non
     user = session.query(User).get(discord_user.id)
     if action.lower() == 'view':
         if not profile:
-            embed = discord.Embed(title=f"{i18n.t('wallet_embed_title', discord_name=discord_user.name)}", description=f"", color=discord.Colour.purple())
+            embed = discord.Embed(title=f"{i18n.t('wallet_embed_title', discord_name=discord_user.name)}", description=f"", color=discord.Color.from_str(settings['color']))
             embed.set_footer(text="Powered by Jaason#4444 (https://twitter.com/Jaasonft)", icon_url="https://i.imgur.com/bOEIgEn.png")
             wallet_message = ""
             for profile_key in user.profile.keys():
@@ -101,7 +101,7 @@ async def profit(interaction: discord.Integration, action: str, profile: str=Non
             embed.set_thumbnail(url=settings['brand_image'])
             await interaction.followup.send(embed=embed, ephemeral=True)
         else:
-            embed = discord.Embed(title=f"{i18n.t('wallet_embed_title', discord_name=discord_user.name)}", description=f"", color=discord.Colour.purple())
+            embed = discord.Embed(title=f"{i18n.t('wallet_embed_title', discord_name=discord_user.name)}", description=f"", color=discord.Color.from_str(settings['color']))
             embed.set_footer(text="Powered by Jaason#4444 (https://twitter.com/Jaasonft)", icon_url="https://i.imgur.com/bOEIgEn.png")
             wallet_message = ""
             try:
@@ -227,7 +227,7 @@ async def profit(interaction: discord.Integration, collection: str, wallet_profi
     if data['break_even_price'] > 0:
         message_2 += i18n.t('break_even_price', break_even_price=round(data['break_even_price'], eth_decimal))
 
-    embed = discord.Embed(title=f"{i18n.t('embed_title', project_name=data['project_name'])}", description=f"{message_1}\n{message_2}", color=discord.Colour.purple())
+    embed = discord.Embed(title=f"{i18n.t('embed_title', project_name=data['project_name'])}", description=f"{message_1}\n{message_2}", color=discord.Color.from_str(settings['color']))
     embed.set_footer(text="Powered by Jaason#4444 (https://twitter.com/Jaasonft)", icon_url="https://i.imgur.com/bOEIgEn.png")
     embed.add_field(name=f"{i18n.t('mint_amount')} \u200B \u200B \u200B \u200B", value=f"`{data['total_mint_amount']}`", inline=True)
     embed.add_field(name=f"{i18n.t('mint_spent')}", value=f"`Ξ{round(data['eth_mint_spent'], eth_decimal)} (${data['usd_mint_spent']})`")
