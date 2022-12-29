@@ -50,7 +50,7 @@ def generate_image(discord_name, icon, data, settings):
     # draw data
     draw = ImageDraw.Draw(img)
     draw_text(draw, magic[4][0], str(discord_name), magic[4][1], ImageFont.truetype(font, size=magic[4][2]), magic[4][3])
-    draw_text(draw, magic[5][0], str(data['project_name']), magic[5][1], ImageFont.truetype(bfont, size=magic[5][2]), magic[5][3])
+    draw_text(draw, magic[5][0], str(data['project_name']), magic[5][1], ImageFont.truetype(bfont, size=magic[5][2]), magic[5][3], max_width=settings['max_width'])
 
     eth_symbol = magic[0]
     e = eth_symbol
@@ -78,14 +78,21 @@ def generate_image(discord_name, icon, data, settings):
 
     return img
 
-def draw_text(draw, xy, text, color, font, spacing, align="left"):
+def draw_text(draw, xy, text, color, font, spacing, align="left", max_width=None):
+    current_width = 0
     gap_width = spacing
     xpos = xy[0]
+    ypos = xy[1]
     if align == "right":
         text = text[::-1]
     for letter in text:
-        draw.text((xpos, xy[1]), letter, color, font=font)
         letter_width, letter_height = draw.textsize(letter, font=font)
+        if max_width is not None and current_width + letter_width > max_width:
+            xpos = xy[0]
+            ypos += letter_height
+            current_width = 0
+        current_width += letter_width
+        draw.text((xpos, ypos), letter, color, font=font)
         if align == "right":
             xpos -= letter_width - gap_width
         else:
@@ -96,12 +103,12 @@ if __name__ == '__main__':
     # legacy but for reference
     # magic = [(icon size, icon size), (icon x, icon y), (name x, name y), (project name x, project name y), (buy amount x, buy amount y), (eth_spent x, eth_spent y), (eth_avg_sell_price x, eth_avg_sell_price y), (total_nft_owned x, total_nft_owned y), (eth_gained x, eth_gained y), (eth_holding_value x, eth_holding_value y), (potential_pl_eth x, potential_pl_eth y), (roi x, roi y)]
 
-    data = {'project_name': 'SAN Origin', 'project_floor': 0.0587, 'project_floor_usd': 75, 'project_image_url': 'https://open-graph.opensea.io/v1/collections/san-origin', 'total_nft_owned': 3, 'total_trade_count': 4, 'total_mint_amount': 0, 'total_buy_amount': 6, 'total_sell_amount': 3, 'eth_gas_spent': 0.012, 'usd_gas_spent': 15, 'eth_spent': 0.237, 'eth_gained': 0.203, 'usd_spent': 305, 'usd_gained': 261, 'eth_avg_buy_price': 0.039, 'usd_avg_buy_price': 51, 'eth_avg_sell_price': 0.068, 'usd_avg_sell_price': 87, 'eth_holding_value': 10.176, 'usd_holding_value': 226, 'realised_pl_eth': -0.034, 'realised_pl_usd': -44, 'potential_pl_eth': 190.142, 'potential_pl_usd': 182, 'roi': 140.432685166430362}
+    data = {'project_name': 'A really long name and nft collection', 'project_floor': 0.0587, 'project_floor_usd': 75, 'project_image_url': 'https://open-graph.opensea.io/v1/collections/san-origin', 'total_nft_owned': 3, 'total_trade_count': 4, 'total_mint_amount': 0, 'total_buy_amount': 6, 'total_sell_amount': 3, 'eth_gas_spent': 0.012, 'usd_gas_spent': 15, 'eth_spent': 0.237, 'eth_gained': 0.203, 'usd_spent': 305, 'usd_gained': 261, 'eth_avg_buy_price': 0.039, 'usd_avg_buy_price': 51, 'eth_avg_sell_price': 0.068, 'usd_avg_sell_price': 87, 'eth_holding_value': 10.176, 'usd_holding_value': 226, 'realised_pl_eth': -0.034, 'realised_pl_usd': -44, 'potential_pl_eth': 190.142, 'potential_pl_usd': 182, 'roi': 140.432685166430362}
 
     response = requests.get("https://i.imgur.com/LOe8LRd.png")
     icon = Image.open(BytesIO(response.content))
 
-    settings = {"language": "en", "eth_decimal": 3, "brand_image": "https://i.imgur.com/GUDsN8I.jpg", "template": "tbp_template.jpg", "width": 724, "height": 1024, "font": "monoMMM-5-1.ttf", "bold_font": "monoMMM-5-1.ttf", "magic": ["", "eth_only", [155, 155, "tbp_special"], [64, 95], [[240, 220], "white", 26, 0, "left"], [[240, 145], "white", 40, 0, "left"], [[650, 354], "white", 26, 0, "right"], [[650, 390], "white", 26, 0, "right"], [[650, 426], "white", 26, 0, "right"], [[650, 462], "white", 26, 0, "right"], [[650, 500], "white", 26, 0, "right"], [[650, 538], "white", 26, 0, "right"], [[180, 700], "white", 52, 0, "left"], [[650, 700], "green", 52, 0, "right"]]}
+    settings = {"language": "en", "eth_decimal": 3, "tracking_id": "pl_bot_tbp/5a557f61-d448-4cea-a422-82ad90e92d3a", "color": "#000000", "brand_image": "https://i.imgur.com/GUDsN8I.jpg", "template": "tbp_template.jpg", "width": 724, "height": 1024, "font": "monoMMM-5-1.ttf", "bold_font": "monoMMM-5-1.ttf", "magic": ["", "eth_only", [155, 155, "tbp_special"], [64, 95], [[240, 220], "white", 26, 0, "left"], [[240, 90], "white", 40, 0, "left"], [[650, 354], "white", 26, 0, "right"], [[650, 390], "white", 26, 0, "right"], [[650, 426], "white", 26, 0, "right"], [[650, 462], "white", 26, 0, "right"], [[650, 500], "white", 26, 0, "right"], [[650, 538], "white", 26, 0, "right"], [[180, 700], "white", 52, 0, "left"], [[650, 700], "green", 52, 0, "right"]], "max_width": 450}
 
     img = generate_image("Jaason", icon, data, settings)
     img.save('test.jpg')
