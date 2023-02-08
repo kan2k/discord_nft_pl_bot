@@ -31,7 +31,6 @@ Base.metadata.create_all(bind=engine)
 Session = sessionmaker(bind=engine)
 session = Session()
 
-
 here = os.path.dirname(os.path.abspath(__file__))
 config = dotenv_values(os.path.join(here, ".env"))
 
@@ -82,7 +81,7 @@ def set_settings(guild_id, value):
 
 @bot.tree.command(name="wallet")
 @app_commands.describe(action="action", profile="profile", wallets="wallets")
-async def profit(interaction: discord.Integration, action: str, profile: str=None, wallets: str=None):
+async def wallet(interaction: discord.Integration, action: str, profile: str=None, wallets: str=None):
     await interaction.response.defer(ephemeral=True)
     discord_user = await bot.fetch_user(interaction.user.id)
     print(f"> [{interaction.guild.name}] {interaction.user.name} {action} {profile} {wallets}")
@@ -189,11 +188,13 @@ async def profit(interaction: discord.Integration, collection: str, wallet_profi
     print(f"> [{interaction.guild.name}] {interaction.user.name} requested {collection} for wallets {wallet_profile}")
     settings = get_settings(interaction.guild_id)
 
-    tracking = requests.get(f"https://api.countapi.xyz/hit/{settings['tracking_id']}")
-
     i18n.set('locale', settings['language'])
 
-    if "opensea.io" not in collection and not collection.startswith('0x') and len(collection) != 42:
+    if "opensea.io" not in collection and "0x" not in collection:
+        await interaction.followup.send(f"{i18n.t('invalid_collection', collection=collection)}", ephemeral=True)
+        return
+
+    if len(collection) != 42:
         await interaction.followup.send(f"{i18n.t('invalid_collection', collection=collection)}", ephemeral=True)
         return
 
@@ -248,6 +249,8 @@ async def profit(interaction: discord.Integration, collection: str, wallet_profi
     embed.add_field(name=f"{i18n.t('current_pl')}", value=f"`Ξ{round(data['realised_pl_eth'], eth_decimal)} (${data['realised_pl_usd']})`")
     embed.add_field(name=f"{i18n.t('roi')}", value=f"`{round(data['roi'], 2)}%`")
     embed.set_thumbnail(url=settings['brand_image'])
+
+    tracking = requests.get(f"https://api.countapi.xyz/hit/{settings['tracking_id']}")
 
     if settings['template'] == "":
         embed.set_image(url=data['project_image_url'])
