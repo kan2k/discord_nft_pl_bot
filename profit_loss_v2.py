@@ -130,10 +130,11 @@ async def get_transaction_details(wallet_address, tx_hash, weth_txs, internal_tx
                 "tx_type": tx_type,
                 "case": "1"}
     else:
+        eth_spent = eth_gained - eth_spent
         return {"eth_gas_spent": to_ether(eth_gas_spent),
                 "eth_mint_spent": to_ether(eth_mint_spent),
                 "eth_spent": 0, 
-                "eth_gained": to_ether(eth_gained) - to_ether(eth_spent),
+                "eth_gained": to_ether(eth_spent),
                 "tx_type": tx_type,
                 "case": "2"}
 
