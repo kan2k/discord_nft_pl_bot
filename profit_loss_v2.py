@@ -249,7 +249,7 @@ async def get_pl(os_url: str, wallets: list) -> dict:
 
         # print(f"Processing internal txs")
 
-        f = Fetch(limit=asyncio.Semaphore(4), rate=1)
+        f = Fetch(limit=asyncio.Semaphore(3), rate=1)
         tasks = []
         for tx_hash in nft_per_tx_dict:
             tasks.append(f.make_request(url=f"https://api.etherscan.io/api?module=account&action=txlistinternal&txhash={tx_hash}&apikey={etherscan_api_key}", hash=tx_hash))
